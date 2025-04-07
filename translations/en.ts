@@ -216,6 +216,8 @@ export const en = {
     editGoalTitle: "Edit Goal",
     saveGoalButton: "Save Goal",
     deleteGoalButton: "Delete Goal",
+    cancelButton: "Cancel",
+    viewAllGoals: "View All Goals",
     categories: {
       savings: "Savings",
       investment: "Investment",

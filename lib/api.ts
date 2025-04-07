@@ -289,6 +289,123 @@ export async function getGoals(): Promise<Goal[]> {
   }
 }
 
+// Add a new financial goal
+export async function addGoal(goal: Omit<Goal, "id">): Promise<Goal> {
+  try {
+    const user = auth.currentUser;
+    if (!user) {
+      throw new Error("Người dùng chưa đăng nhập");
+    }
+
+    const goalData = {
+      userId: user.uid,
+      name: goal.name,
+      category: goal.category,
+      targetAmount: goal.targetAmount,
+      currentAmount: goal.currentAmount,
+      deadline: goal.deadline ? new Date(goal.deadline) : null,
+      createdAt: serverTimestamp(),
+    };
+
+    const docRef = await addDoc(collection(db, "goals"), goalData);
+
+    // Trả về đối tượng mục tiêu hoàn chỉnh với ID mới
+    return {
+      id: docRef.id,
+      name: goal.name,
+      category: goal.category,
+      targetAmount: goal.targetAmount,
+      currentAmount: goal.currentAmount,
+      deadline: goal.deadline,
+    };
+  } catch (error) {
+    console.error("Lỗi khi thêm mục tiêu tài chính:", error);
+    throw error;
+  }
+}
+
+// Update a financial goal
+export async function updateGoal(
+  id: string,
+  goal: Partial<Goal>
+): Promise<Goal> {
+  try {
+    const user = auth.currentUser;
+    if (!user) {
+      throw new Error("Người dùng chưa đăng nhập");
+    }
+
+    const goalRef = doc(db, "goals", id);
+    const goalSnapshot = await getDoc(goalRef);
+
+    if (!goalSnapshot.exists()) {
+      throw new Error("Mục tiêu tài chính không tồn tại");
+    }
+
+    const currentData = goalSnapshot.data();
+    if (currentData.userId !== user.uid) {
+      throw new Error("Không có quyền cập nhật mục tiêu này");
+    }
+
+    const updateData: any = {};
+    if (goal.name) updateData.name = goal.name;
+    if (goal.category) updateData.category = goal.category;
+    if (goal.targetAmount !== undefined)
+      updateData.targetAmount = goal.targetAmount;
+    if (goal.currentAmount !== undefined)
+      updateData.currentAmount = goal.currentAmount;
+    if (goal.deadline) updateData.deadline = new Date(goal.deadline);
+
+    await updateDoc(goalRef, updateData);
+
+    // Lấy dữ liệu cập nhật để trả về
+    const updatedSnapshot = await getDoc(goalRef);
+    const updatedData = updatedSnapshot.data();
+
+    return {
+      id,
+      name: updatedData.name,
+      category: updatedData.category,
+      targetAmount: updatedData.targetAmount,
+      currentAmount: updatedData.currentAmount,
+      deadline:
+        updatedData.deadline instanceof Timestamp
+          ? updatedData.deadline.toDate().toISOString().split("T")[0]
+          : updatedData.deadline,
+    };
+  } catch (error) {
+    console.error("Lỗi khi cập nhật mục tiêu tài chính:", error);
+    throw error;
+  }
+}
+
+// Delete a financial goal
+export async function deleteGoal(id: string): Promise<void> {
+  try {
+    const user = auth.currentUser;
+    if (!user) {
+      throw new Error("Người dùng chưa đăng nhập");
+    }
+
+    const goalRef = doc(db, "goals", id);
+    const goalSnapshot = await getDoc(goalRef);
+
+    if (!goalSnapshot.exists()) {
+      throw new Error("Mục tiêu tài chính không tồn tại");
+    }
+
+    const data = goalSnapshot.data();
+    if (data.userId !== user.uid) {
+      throw new Error("Không có quyền xóa mục tiêu này");
+    }
+
+    await deleteDoc(goalRef);
+  } catch (error) {
+    console.error("Lỗi khi xóa mục tiêu tài chính:", error);
+    throw error;
+  }
+}
+
 // Get recurring transactions
 export async function getRecurringTransactions(): Promise<
   RecurringTransaction[]

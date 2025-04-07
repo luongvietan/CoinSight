@@ -220,6 +220,8 @@ export const vi = {
     editGoalTitle: "Chỉnh sửa mục tiêu",
     saveGoalButton: "Lưu mục tiêu",
     deleteGoalButton: "Xóa mục tiêu",
+    cancelButton: "Hủy",
+    viewAllGoals: "Xem tất cả mục tiêu",
     categories: {
       savings: "Tiết kiệm",
       investment: "Đầu tư",

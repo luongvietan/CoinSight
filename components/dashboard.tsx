@@ -28,11 +28,17 @@ import {
   getGoals,
   getRecurringTransactions,
   addTransaction,
+  addGoal,
+  updateGoal,
+  deleteGoal,
 } from "@/lib/api";
 import { useLanguage } from "@/contexts/language-context";
 import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
 import React from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { ExternalLink } from "lucide-react";
 
 // Wrap StatCards with React.memo to prevent unnecessary renders
 const MemoizedStatCards = React.memo(StatCards);
@@ -159,16 +165,92 @@ export default function Dashboard() {
     }
   };
 
-  const handleAddGoal = (goal: Goal) => {
-    setGoals((prev) => [...prev, goal]);
+  const handleAddGoal = async (goal: Omit<Goal, "id">) => {
+    try {
+      if (user) {
+        // Nếu đã đăng nhập, lưu vào database
+        const newGoal = await addGoal(goal);
+        setGoals((prev) => [...prev, newGoal]);
+      } else {
+        // Nếu chưa đăng nhập, chỉ lưu vào localStorage
+        const newGoal: Goal = {
+          ...goal,
+          id: Date.now().toString(), // Tạo ID tạm thời
+        };
+
+        const updatedGoals = [...goals, newGoal];
+        setGoals(updatedGoals);
+        localStorage.setItem("financialGoals", JSON.stringify(updatedGoals));
+      }
+
+      toast.success({
+        title: "Thành công",
+        description: "Đã thêm mục tiêu tài chính mới",
+      });
+    } catch (error: any) {
+      console.error("Lỗi khi thêm mục tiêu:", error);
+      toast.error({
+        title: "Lỗi",
+        description: error.message || "Không thể thêm mục tiêu tài chính",
+      });
+    }
   };
 
-  const handleUpdateGoal = (goal: Goal) => {
-    setGoals((prev) => prev.map((g) => (g.id === goal.id ? goal : g)));
+  const handleUpdateGoal = async (updatedGoal: Goal) => {
+    try {
+      if (user) {
+        // Nếu đã đăng nhập, cập nhật trong database
+        await updateGoal(updatedGoal.id, updatedGoal);
+      }
+
+      // Cập nhật state UI
+      const updatedGoals = goals.map((goal) =>
+        goal.id === updatedGoal.id ? updatedGoal : goal
+      );
+
+      setGoals(updatedGoals);
+
+      // Luôn lưu vào localStorage để đảm bảo dữ liệu được đồng bộ
+      localStorage.setItem("financialGoals", JSON.stringify(updatedGoals));
+
+      toast.success({
+        title: "Thành công",
+        description: "Đã cập nhật mục tiêu tài chính",
+      });
+    } catch (error: any) {
+      console.error("Lỗi khi cập nhật mục tiêu:", error);
+      toast.error({
+        title: "Lỗi",
+        description: error.message || "Không thể cập nhật mục tiêu tài chính",
+      });
+    }
   };
 
-  const handleDeleteGoal = (goalId: string) => {
-    setGoals((prev) => prev.filter((g) => g.id !== goalId));
+  const handleDeleteGoal = async (goalId: string) => {
+    try {
+      if (user) {
+        // Nếu đã đăng nhập, xóa trong database
+        await deleteGoal(goalId);
+      }
+
+      // Cập nhật state UI
+      const updatedGoals = goals.filter((goal) => goal.id !== goalId);
+      setGoals(updatedGoals);
+
+      // Luôn lưu vào localStorage để đảm bảo dữ liệu được đồng bộ
+      localStorage.setItem("financialGoals", JSON.stringify(updatedGoals));
+
+      toast.success({
+        title: "Thành công",
+        description: "Đã xóa mục tiêu tài chính",
+      });
+    } catch (error: any) {
+      console.error("Lỗi khi xóa mục tiêu:", error);
+      toast.error({
+        title: "Lỗi",
+        description: error.message || "Không thể xóa mục tiêu tài chính",
+      });
+    }
   };
 
   const handleAddBudget = async (budget: Budget) => {
@@ -460,6 +542,19 @@ export default function Dashboard() {
                         onUpdateGoal={handleUpdateGoal}
                         onDeleteGoal={handleDeleteGoal}
                       />
+                      <div className="mt-4 flex justify-end">
+                        <Link href="/goals" passHref>
+                          <Button
+                            variant="outline"
+                            className="flex items-center gap-2"
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                            <span>
+                              {translations[language].goals.viewAllGoals}
+                            </span>
+                          </Button>
+                        </Link>
+                      </div>
                     </div>
 
                     <div className="space-y-6">

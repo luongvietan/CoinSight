@@ -32,7 +32,7 @@ import type { Goal } from "@/types/goal";
 
 interface FinancialGoalsProps {
   goals: Goal[];
-  onAddGoal: (goal: Goal) => void;
+  onAddGoal: (goal: Omit<Goal, "id">) => void;
   onUpdateGoal: (goal: Goal) => void;
   onDeleteGoal: (goalId: string) => void;
 }
@@ -80,8 +80,7 @@ export default function FinancialGoals({
   };
 
   const handleSaveGoal = () => {
-    const newGoal: Goal = {
-      id: editingGoal ? editingGoal.id : Date.now().toString(),
+    const newGoal = {
       name: formData.name,
       category: formData.category,
       targetAmount: Number(formData.targetAmount),
@@ -90,7 +89,10 @@ export default function FinancialGoals({
     };
 
     if (editingGoal) {
-      onUpdateGoal(newGoal);
+      onUpdateGoal({
+        ...newGoal,
+        id: editingGoal.id,
+      });
     } else {
       onAddGoal(newGoal);
     }
