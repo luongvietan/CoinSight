@@ -1,7 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { User, LogOut, Settings, Plus, Bell, Target } from "lucide-react";
+import {
+  User,
+  LogOut,
+  Settings,
+  Plus,
+  Bell,
+  Target,
+  Wrench,
+} from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -53,15 +61,17 @@ export default function Header({ onAddClick }: HeaderProps) {
   const handleLogout = async () => {
     try {
       await signOut();
-      toast.success({
+      toast({
         title: "Đăng xuất thành công",
         description: "Hẹn gặp lại bạn sau!",
+        variant: "success",
       });
     } catch (error) {
       console.error("Lỗi đăng xuất:", error);
-      toast.error({
+      toast({
         title: "Lỗi đăng xuất",
         description: "Đã xảy ra lỗi khi đăng xuất. Vui lòng thử lại.",
+        variant: "destructive",
       });
     }
   };
@@ -152,6 +162,12 @@ export default function Header({ onAddClick }: HeaderProps) {
                 <Link href="/goals" className="flex items-center w-full">
                   <Target className="mr-2 h-4 w-4" />
                   <span>{translations[language].goals.title}</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/tools" className="flex items-center w-full">
+                  <Wrench className="mr-2 h-4 w-4" />
+                  <span>{t.menuItems.tools}</span>
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>

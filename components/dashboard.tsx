@@ -38,7 +38,14 @@ import { useRouter } from "next/navigation";
 import React from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ExternalLink } from "lucide-react";
+import {
+  ExternalLink,
+  Wrench,
+  CreditCard,
+  Calendar,
+  Calculator,
+  Percent,
+} from "lucide-react";
 
 // Wrap StatCards with React.memo to prevent unnecessary renders
 const MemoizedStatCards = React.memo(StatCards);
@@ -398,14 +405,16 @@ export default function Dashboard() {
                 className="mb-6"
               >
                 <TabsList className="grid grid-cols-3 md:grid-cols-5 mb-4">
-                  <TabsTrigger value="overview">Overview</TabsTrigger>
-                  <TabsTrigger value="transactions">Transactions</TabsTrigger>
-                  <TabsTrigger value="budgets">Budgets</TabsTrigger>
+                  <TabsTrigger value="overview">{t.overview}</TabsTrigger>
+                  <TabsTrigger value="transactions">
+                    {t.transactions}
+                  </TabsTrigger>
+                  <TabsTrigger value="budgets">{t.budgets}</TabsTrigger>
                   <TabsTrigger value="goals" className="hidden md:block">
-                    Goals
+                    {t.goals}
                   </TabsTrigger>
                   <TabsTrigger value="tools" className="hidden md:block">
-                    Tools
+                    {t.tools}
                   </TabsTrigger>
                 </TabsList>
 
@@ -548,10 +557,10 @@ export default function Dashboard() {
                             variant="outline"
                             className="flex items-center gap-2"
                           >
-                            <ExternalLink className="h-4 w-4" />
                             <span>
                               {translations[language].goals.viewAllGoals}
                             </span>
+                            <ExternalLink className="h-4 w-4" />
                           </Button>
                         </Link>
                       </div>
@@ -578,7 +587,67 @@ export default function Dashboard() {
                 <TabsContent value="tools">
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div className="lg:col-span-2">
-                      <ExportData transactions={transactions} />
+                      <motion.div
+                        className="bg-card rounded-lg shadow p-4"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                      >
+                        <div className="flex justify-between items-center mb-4">
+                          <h2 className="text-xl font-semibold">
+                            Công cụ tài chính
+                          </h2>
+                          <Link href="/tools">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex items-center gap-2"
+                            >
+                              <span>Xem tất cả</span>
+                              <ExternalLink className="h-4 w-4" />
+                            </Button>
+                          </Link>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <Link href="/tools#loan-calculator" className="block">
+                            <div className="flex flex-col items-center rounded-lg border p-4 text-center hover:border-primary hover:bg-primary/5 transition-colors">
+                              <CreditCard className="mb-2 h-8 w-8 text-primary" />
+                              <h3 className="text-lg font-medium">
+                                Tính khoản vay
+                              </h3>
+                              <p className="text-sm text-muted-foreground">
+                                Tính toán chi phí và lãi suất khoản vay
+                              </p>
+                            </div>
+                          </Link>
+
+                          <Link href="/tools/loan-schedule" className="block">
+                            <div className="flex flex-col items-center rounded-lg border p-4 text-center hover:border-primary hover:bg-primary/5 transition-colors">
+                              <Calendar className="mb-2 h-8 w-8 text-primary" />
+                              <h3 className="text-lg font-medium">
+                                Lịch trả nợ
+                              </h3>
+                              <p className="text-sm text-muted-foreground">
+                                Tạo lịch trả nợ chi tiết cho khoản vay
+                              </p>
+                            </div>
+                          </Link>
+
+                          <Link href="/tools/tax-calculator" className="block">
+                            <div className="flex flex-col items-center rounded-lg border p-4 text-center hover:border-primary hover:bg-primary/5 transition-colors">
+                              <Calculator className="mb-2 h-8 w-8 text-primary" />
+                              <h3 className="text-lg font-medium">Tính thuế</h3>
+                              <p className="text-sm text-muted-foreground">
+                                Tính toán thuế thu nhập cá nhân
+                              </p>
+                            </div>
+                          </Link>
+                        </div>
+                      </motion.div>
+
+                      <div className="mt-6">
+                        <ExportData transactions={transactions} />
+                      </div>
                     </div>
 
                     <div className="space-y-6">
@@ -586,6 +655,47 @@ export default function Dashboard() {
                         className="bg-card rounded-lg shadow p-4"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
+                        transition={{ delay: 0.3 }}
+                      >
+                        <h2 className="text-xl font-semibold mb-4">
+                          Tính năng nổi bật
+                        </h2>
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-3 p-3 rounded-lg border">
+                            <Wrench className="h-8 w-8 text-primary" />
+                            <div>
+                              <h3 className="font-medium">
+                                Chuyển đổi tiền tệ
+                              </h3>
+                              <p className="text-sm text-muted-foreground">
+                                Chuyển đổi giữa các loại tiền tệ
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3 p-3 rounded-lg border">
+                            <Percent className="h-8 w-8 text-primary" />
+                            <div>
+                              <h3 className="font-medium">Tính tiết kiệm</h3>
+                              <p className="text-sm text-muted-foreground">
+                                Tính toán giá trị tương lai và lãi kép
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="mt-4">
+                          <Link href="/tools">
+                            <Button className="w-full">
+                              Khám phá công cụ tài chính
+                            </Button>
+                          </Link>
+                        </div>
+                      </motion.div>
+
+                      <motion.div
+                        className="bg-card rounded-lg shadow p-4"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.5 }}
                       >
                         <h2 className="text-xl font-semibold mb-4">
                           {t.financialCalendar}

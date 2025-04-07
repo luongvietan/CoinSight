@@ -79,10 +79,10 @@ import {
 
 const generalFormSchema = z.object({
   monthlyBudget: z.coerce.number().min(0),
-  pushNotifications: z.boolean().default(true),
-  emailNotifications: z.boolean().default(true),
-  budgetAlerts: z.boolean().default(true),
-  paymentReminders: z.boolean().default(true),
+  pushNotifications: z.boolean(),
+  emailNotifications: z.boolean(),
+  budgetAlerts: z.boolean(),
+  paymentReminders: z.boolean(),
 });
 
 const securityFormSchema = z
@@ -285,7 +285,11 @@ export default function SettingsPage() {
           </TabsTrigger>
           <TabsTrigger value="security" className="flex items-center gap-2">
             <Shield className="h-4 w-4" />
-            <span>{t.security}</span>
+            <span>
+              {typeof t.security === "object" && t.security
+                ? t.security.title || "Security"
+                : t.security || "Security"}
+            </span>
           </TabsTrigger>
         </TabsList>
 
@@ -332,7 +336,9 @@ export default function SettingsPage() {
                         <div>
                           <h3 className="text-lg font-medium flex items-center gap-2">
                             <Bell className="h-5 w-5" />
-                            {t.notifications}
+                            {typeof t.notifications === "object"
+                              ? "Notifications"
+                              : t.notifications}
                           </h3>
                           <Separator className="my-3" />
 
@@ -372,9 +378,7 @@ export default function SettingsPage() {
                                       {t.emailNotifications}
                                     </FormLabel>
                                     <FormDescription>
-                                      {language === "en"
-                                        ? "Receive email notifications"
-                                        : "Nhận thông báo qua email"}
+                                      {t.formDescriptions.emailNotifications}
                                     </FormDescription>
                                   </div>
                                   <FormControl>
@@ -397,9 +401,7 @@ export default function SettingsPage() {
                                       {t.budgetAlerts}
                                     </FormLabel>
                                     <FormDescription>
-                                      {language === "en"
-                                        ? "Alerts when you approach budget limits"
-                                        : "Cảnh báo khi bạn tiến gần đến giới hạn ngân sách"}
+                                      {t.formDescriptions.budgetAlerts}
                                     </FormDescription>
                                   </div>
                                   <FormControl>
@@ -492,7 +494,11 @@ export default function SettingsPage() {
             >
               <Card>
                 <CardHeader>
-                  <CardTitle>{t.security}</CardTitle>
+                  <CardTitle>
+                    {typeof t.security === "object"
+                      ? t.security.title || "Security"
+                      : t.security || "Security"}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <Form {...securityForm}>

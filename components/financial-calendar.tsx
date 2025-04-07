@@ -1,10 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { format } from "date-fns";
+import { format, getDaysInMonth, startOfMonth, getDay } from "date-fns";
 import { vi, enUS } from "date-fns/locale";
 import { CalendarIcon, X } from "lucide-react";
-import { Calendar } from "@/components/ui/calendar";
 import {
   Dialog,
   DialogContent,
@@ -36,68 +35,95 @@ export default function FinancialCalendar({
   const { language, translations } = useLanguage();
   const t = translations[language].financialCalendar;
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [currentMonth] = useState(new Date(2025, 3)); // April 2025 (0-indexed)
 
-  const handleSelect = (date: Date | undefined) => {
-    if (date) {
-      onSelectDate(date);
-      setIsDialogOpen(true);
-    }
+  const handleSelect = (date: Date) => {
+    onSelectDate(date);
+    setIsDialogOpen(true);
   };
 
-  // Function to determine if a date has high spending
   const isHighSpendingDay = (date: Date) => {
     return highSpendingDays.some(
       (d) => d.toISOString().split("T")[0] === date.toISOString().split("T")[0]
     );
   };
 
-  // Get total spending for selected date
   const getTotalSpending = () => {
     return selectedDateTransactions
       .filter((t) => t.amount < 0)
       .reduce((sum, t) => sum + Math.abs(t.amount), 0);
   };
 
-  // Get total income for selected date
   const getTotalIncome = () => {
     return selectedDateTransactions
       .filter((t) => t.amount > 0)
       .reduce((sum, t) => sum + t.amount, 0);
   };
 
+  // Generate calendar days
+  const renderCalendarDays = () => {
+    const daysInMonth = getDaysInMonth(currentMonth);
+    const startDay = getDay(startOfMonth(currentMonth));
+    const days = [];
+
+    // Add empty cells for days before the 1st of the month
+    for (let i = 0; i < startDay; i++) {
+      days.push(<div key={`empty-${i}`} className="h-8"></div>);
+    }
+
+    // Add days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(
+        currentMonth.getFullYear(),
+        currentMonth.getMonth(),
+        day
+      );
+      const isSelected =
+        selectedDate &&
+        selectedDate.getDate() === day &&
+        selectedDate.getMonth() === currentMonth.getMonth() &&
+        selectedDate.getFullYear() === currentMonth.getFullYear();
+      const isHighSpending = isHighSpendingDay(date);
+
+      days.push(
+        <button
+          key={day}
+          onClick={() => handleSelect(date)}
+          className={`h-8 w-8 rounded-full flex items-center justify-center
+            ${isSelected ? "bg-blue-500 text-white" : ""}
+            ${isHighSpending ? "bg-red-500 text-white font-bold" : ""}
+            hover:bg-gray-200 transition-colors`}
+        >
+          {day}
+        </button>
+      );
+    }
+
+    return days;
+  };
+
   return (
     <div className="space-y-4">
-      <div className="bg-card rounded-lg border p-3">
-        <Calendar
-          mode="single"
-          selected={selectedDate || undefined}
-          onSelect={handleSelect}
-          className="rounded-md"
-          locale={language === "vi" ? vi : enUS}
-          modifiers={{
-            highSpending: highSpendingDays,
-          }}
-          modifiersClassNames={{
-            highSpending: "bg-destructive/20 font-bold text-destructive",
-          }}
-          components={{
-            DayContent: (props) => {
-              const isHighSpending = isHighSpendingDay(props.date);
-              return (
-                <div
-                  className={`relative flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-accent ${
-                    isHighSpending ? "font-bold" : ""
-                  }`}
-                >
-                  {props.date.getDate()}
-                  {isHighSpending && (
-                    <div className="absolute bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-destructive" />
-                  )}
-                </div>
-              );
-            },
-          }}
-        />
+      <div className="bg-[#f0f0f0] rounded-lg border p-4 text-[#333]">
+        <div className="mb-4">
+          <h2 className="text-lg font-semibold text-center">
+            {format(currentMonth, "MMMM yyyy", {
+              locale: language === "vi" ? vi : enUS,
+            })}
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-7 gap-1 text-center">
+          {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => (
+            <div key={day} className="text-sm font-medium text-gray-500">
+              {day}
+            </div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-7 gap-1 mt-2">
+          {renderCalendarDays()}
+        </div>
       </div>
 
       <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">

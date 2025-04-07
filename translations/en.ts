@@ -32,11 +32,17 @@ export const en = {
     },
     menuItems: {
       profile: "Profile",
+      tools: "Tools",
       settings: "Settings",
       logout: "Log out",
     },
   },
   dashboard: {
+    overview: "Overview",
+    transactions: "Transactions",
+    budgets: "Budgets",
+    goals: "Goals",
+    tools: "Tools",
     spendingTrends: "Spending Trends",
     recentTransactions: "Recent Transactions",
     budgetTracking: "Budget Tracking",
@@ -51,6 +57,16 @@ export const en = {
       title: "Transaction added",
       description: "Your transaction has been saved successfully",
     },
+  },
+  categories: {
+    categories: "Categories",
+    manageCategory: "Manage Categories",
+    edit: "Add, edit, or remove transaction categories",
+    new: "New Category Name",
+    color: "Color",
+    yourCategories: "Your Categories",
+    enter: "Enter category name",
+    add: "Add",
   },
   addTransaction: {
     title: "Add Transaction",
@@ -96,6 +112,12 @@ export const en = {
     cancelButton: "Cancel",
     saveButton: "Save Transaction",
     savingButton: "Saving...",
+  },
+  stat: {
+    income: "Income",
+    expenses: "Expenses",
+    saving: "Savings",
+    thismonth: "This month",
   },
   emptyState: {
     title: "No transactions yet",
@@ -318,5 +340,209 @@ export const en = {
     passwordChanged: "Password changed successfully!",
     passwordError:
       "Failed to change password. Please check your current password.",
+    formDescriptions: {
+      emailNotifications: "Receive email notifications",
+      budgetAlerts: "Alerts when you approach budget limits",
+    },
+  },
+  tools: {
+    backToHome: "Back to Home",
+    title: "Financial Tools",
+    description:
+      "Explore useful financial tools to manage your money more effectively",
+    tabs: {
+      loanCalculator: "Loan Calculator",
+      savingsCalculator: "Savings Calculator",
+      currencyConverter: "Currency Converter",
+      loanSchedule: "Loan Schedule",
+      taxCalculator: "Tax Calculator",
+    },
+    loanCalculator: {
+      title: "Loan Calculator",
+      description:
+        "Calculate monthly payments, total cost, and interest of a loan.",
+      loanAmount: "Loan Amount",
+      interestRate: "Annual Interest Rate (%)",
+      loanTerm: "Loan Term (months)",
+      calculate: "Calculate",
+      results: {
+        title: "Calculation Results",
+        monthlyPayment: "Monthly Payment",
+        totalPayment: "Total Payment",
+        totalInterest: "Total Interest",
+      },
+    },
+    savingsCalculator: {
+      title: "Savings Calculator",
+      description:
+        "Calculate the future value of your savings with compound interest.",
+      initialAmount: "Initial Amount",
+      monthlyDeposit: "Monthly Deposit",
+      interestRate: "Annual Interest Rate (%)",
+      savingsTerm: "Term (months)",
+      calculate: "Calculate",
+      results: {
+        title: "Calculation Results",
+        futureValue: "Future Value",
+        totalPrincipal: "Total Principal",
+        totalInterest: "Interest Earned",
+      },
+    },
+    currencyConverter: {
+      title: "Currency Converter",
+      description:
+        "Convert between different currencies using current exchange rates.",
+      amount: "Amount",
+      from: "From",
+      to: "To",
+      convert: "Convert",
+      result: "Result",
+      currencies: {
+        VND: "VND - Vietnamese Dong",
+        USD: "USD - US Dollar",
+        EUR: "EUR - Euro",
+      },
+    },
+    additionalTools: {
+      title: "More Tools",
+      description: "Suggest more useful financial tools",
+      loanSchedule: "Loan Schedule",
+      loanScheduleDescription: "Generate detailed loan repayment schedule",
+      taxCalculator: "Tax Calculator",
+      taxCalculatorDescription: "Calculate personal income tax and other fees",
+      creditCardComparison: "Credit Card Comparison",
+      creditCardComparisonDescription:
+        "Compare benefits and costs between credit cards",
+      suggestTool: "Suggest a Tool",
+    },
+    errorMessage: {
+      title: "Error",
+      invalidValues: "Please enter valid values",
+    },
+    loanSchedule: {
+      title: "Loan Schedule",
+      description: "Generate detailed loan repayment schedule",
+      loanAmount: "Loan Amount",
+      interestRate: "Annual Interest Rate (%)",
+      loanTerm: "Loan Term (months)",
+      startDate: "Start Date",
+      calculate: "Calculate",
+      export: "Export CSV",
+      table: {
+        period: "Period",
+        date: "Payment Date",
+        payment: "Payment Amount",
+        principal: "Principal",
+        interest: "Interest",
+        remainingBalance: "Remaining Balance",
+      },
+      noData: "No data available",
+      calculateFirst: "Please calculate the loan schedule first",
+      error: {
+        title: "Error",
+        invalidValues: "Please enter valid values",
+      },
+    },
+    taxCalculator: {
+      title: "Personal Income Tax Calculator",
+      description: "Calculate personal income tax and mandatory insurance",
+      income: "Monthly Income",
+      dependants: "Number of Dependants",
+      insuranceIncluded: "Include Mandatory Insurance",
+      calculate: "Calculate",
+      results: {
+        taxableIncome: "Taxable Income",
+        incomeTax: "Income Tax",
+        socialInsurance: "Social Insurance (8%)",
+        healthInsurance: "Health Insurance (1.5%)",
+        unemploymentInsurance: "Unemployment Insurance (1%)",
+        netIncome: "Net Income",
+        effectiveTaxRate: "Effective Tax Rate",
+      },
+      taxBreakdown: {
+        title: "Tax Breakdown by Bracket",
+        rate: "Tax Rate",
+        income: "Income",
+        tax: "Tax",
+      },
+      deductions: {
+        title: "Deductions",
+        personal: "Personal Deduction",
+        dependant: "Dependant Deduction",
+        insurance: "Insurance Deduction",
+      },
+      tooltips: {
+        dependants: "4.4 million VND per dependant per month",
+        insurance:
+          "Social Insurance (8%), Health Insurance (1.5%), Unemployment Insurance (1%)",
+        personalDeduction: "11 million VND per month for personal deduction",
+      },
+      error: {
+        title: "Error",
+        invalidIncome: "Please enter a valid income",
+      },
+    },
+  },
+  navbar: {
+    home: "Home",
+    overview: "Overview",
+    transactions: "Transactions",
+    budgets: "Budgets",
+    goals: "Goals",
+    tools: "Tools",
+    viewAll: "View all",
+    featuredTools: "Featured Tools",
+  },
+  home: {
+    welcome: "Welcome to CoinSight",
+    description: "Smart financial management powered by AI",
+    getStarted: "Get Started",
+    features: {
+      title: "Featured Tools",
+      description: "Explore useful tools and features",
+      tools: {
+        title: "Financial Tools",
+        description: "Financial calculation and analysis tools",
+        viewAll: "View all tools",
+        featured: {
+          currencyConverter: {
+            title: "Currency Converter",
+            description: "Convert between currencies",
+          },
+          savingsCalculator: {
+            title: "Savings Calculator",
+            description: "Calculate future value and compound interest",
+          },
+          loanCalculator: {
+            title: "Loan Calculator",
+            description: "Calculate loans and interest rates",
+          },
+          taxCalculator: {
+            title: "Tax Calculator",
+            description: "Calculate personal income tax",
+          },
+        },
+      },
+      budgeting: {
+        title: "Budget Management",
+        description: "Track and control your spending",
+      },
+      goals: {
+        title: "Financial Goals",
+        description: "Set and track your financial goals",
+      },
+      insights: {
+        title: "Smart Analysis",
+        description: "Spending analysis and AI suggestions",
+      },
+    },
+  },
+  userMenu: {
+    profile: "Profile",
+    settings: "Settings",
+    tools: "Financial Tools",
+    goals: "Financial Goals",
+    help: "Help",
+    logout: "Log out",
   },
 };

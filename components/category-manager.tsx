@@ -173,7 +173,7 @@ export default function CategoryManager({
         className="flex items-center gap-1"
       >
         <Plus className="h-3.5 w-3.5" />
-        <span>Manage Categories</span>
+        <span>{translations[language].categories.categories}</span>
       </Button>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -182,29 +182,30 @@ export default function CategoryManager({
           aria-describedby="category-manager-description"
         >
           <DialogHeader>
-            <DialogTitle>Manage Categories</DialogTitle>
+            <DialogTitle>
+              {translations[language].categories.manageCategory}
+            </DialogTitle>
             <DialogDescription id="category-manager-description">
-              Add, edit, or remove transaction categories
+              {translations[language].categories.categories}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 my-4">
             <div className="flex items-end gap-2">
-              <div className="flex-1 space-y-2">
-                <label htmlFor="categoryName" className="text-sm font-medium">
-                  New Category Name
-                </label>
-                <Input
-                  id="categoryName"
-                  value={newCategoryName}
-                  onChange={(e) => setNewCategoryName(e.target.value)}
-                  placeholder="Enter category name"
-                />
-              </div>
-
               <div className="space-y-2">
+                <label htmlFor="categoryName" className="text-sm font-medium">
+                  {translations[language].categories.new}
+                </label>
+                <div className="flex-1 space-y-2">
+                  <Input
+                    id="categoryName"
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                    placeholder={translations[language].categories.enter}
+                  />
+                </div>
                 <label htmlFor="categoryColor" className="text-sm font-medium">
-                  Color
+                  {translations[language].categories.color}
                 </label>
                 <div className="flex items-center gap-1">
                   {colorOptions.map((color) => (
@@ -227,12 +228,14 @@ export default function CategoryManager({
 
               <Button onClick={handleAddCategory} className="ml-2">
                 <Plus className="h-4 w-4 mr-1" />
-                Add
+                {translations[language].categories.add}
               </Button>
             </div>
 
             <div className="border rounded-md p-4">
-              <h3 className="font-medium mb-3">Your Categories</h3>
+              <h3 className="font-medium mb-3">
+                {translations[language].categories.yourCategories}
+              </h3>
               <div className="grid grid-cols-2 gap-2">
                 <AnimatePresence>
                   {categories.map((category) => (
