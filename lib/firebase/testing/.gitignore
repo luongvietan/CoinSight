@@ -1,0 +1,17 @@
+# Local testing files
+node_modules
+*.log
+test-results/
+coverage/
+
+# Firebase emulator data
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+database-debug.log
+pubsub-debug.log
+.firebase/
+
+# Environment variables
+.env
+.env.local 

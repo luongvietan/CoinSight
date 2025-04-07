@@ -1,0 +1,59 @@
+// Firestore Security Rules
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Hàm kiểm tra xem user có quyền admin hay không
+    function isUserAdmin(token) {
+      return token.admin == true;
+    }
+    
+    // Rules cho collection users
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Rules cho collection transactions
+    match /transactions/{transactionId} {
+      // Cho phép đọc khi người dùng đã đăng nhập và là chủ sở hữu dữ liệu hoặc là admin
+      allow read: if request.auth != null && 
+                   (resource.data.userId == request.auth.uid || 
+                    isUserAdmin(request.auth.token));
+      
+      // Cho phép tạo mới khi người dùng đã đăng nhập và userId trong dữ liệu trùng với UID người dùng
+      allow create: if request.auth != null && 
+                      request.resource.data.userId == request.auth.uid;
+      
+      // Cho phép cập nhật và xóa khi người dùng đã đăng nhập và là chủ sở hữu dữ liệu hoặc là admin
+      allow update, delete: if request.auth != null && 
+                              (resource.data.userId == request.auth.uid || 
+                               isUserAdmin(request.auth.token));
+    }
+    
+    // Rules cho collection budgets
+    match /budgets/{budgetId} {
+      allow read: if request.auth != null && 
+                   resource.data.userId == request.auth.uid;
+                   
+      allow create: if request.auth != null && 
+                      request.resource.data.userId == request.auth.uid;
+                      
+      allow update, delete: if request.auth != null && 
+                              resource.data.userId == request.auth.uid;
+    }
+    
+    // Rules cho collection goals và recurring_transactions
+    match /{collection}/{documentId} {
+      allow read: if request.auth != null && 
+                   (collection == "goals" || collection == "recurring_transactions") && 
+                   resource.data.userId == request.auth.uid;
+                   
+      allow create: if request.auth != null && 
+                     (collection == "goals" || collection == "recurring_transactions") && 
+                     request.resource.data.userId == request.auth.uid;
+                     
+      allow update, delete: if request.auth != null && 
+                             (collection == "goals" || collection == "recurring_transactions") && 
+                             resource.data.userId == request.auth.uid;
+    }
+  }
+} 
