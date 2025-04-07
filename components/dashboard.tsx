@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useHotkeys } from "react-hotkeys-hook";
 import { motion, AnimatePresence } from "framer-motion";
@@ -32,6 +32,14 @@ import {
 import { useLanguage } from "@/contexts/language-context";
 import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
+import React from "react";
+
+// Wrap StatCards with React.memo to prevent unnecessary renders
+const MemoizedStatCards = React.memo(StatCards);
+// Wrap SpendingChart with React.memo to prevent unnecessary renders
+const MemoizedSpendingChart = React.memo(SpendingChart);
+// Wrap TransactionList with React.memo to prevent unnecessary renders
+const MemoizedTransactionList = React.memo(TransactionList);
 
 export default function Dashboard() {
   const { language, translations } = useLanguage();
@@ -183,22 +191,29 @@ export default function Dashboard() {
     loadData();
   };
 
-  // Calculate statistics
-  const income = transactions
-    .filter((t) => t.amount > 0)
-    .reduce((sum, t) => sum + t.amount, 0);
+  // Tối ưu các tính toán thống kê bằng useMemo
+  const statistics = useMemo(() => {
+    const income = transactions
+      .filter((t) => t.amount > 0)
+      .reduce((sum, t) => sum + t.amount, 0);
 
-  const expenses = transactions
-    .filter((t) => t.amount < 0)
-    .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+    const expenses = transactions
+      .filter((t) => t.amount < 0)
+      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
 
-  const savings = income - expenses;
+    const savings = income - expenses;
 
-  // Get transactions for selected date
-  const getTransactionsForDate = (date: Date) => {
-    const dateString = date.toISOString().split("T")[0];
-    return transactions.filter((t) => t.date === dateString);
-  };
+    return { income, expenses, savings };
+  }, [transactions]);
+
+  // Tối ưu hàm getTransactionsForDate bằng useCallback
+  const getTransactionsForDate = useCallback(
+    (date: Date) => {
+      const dateString = date.toISOString().split("T")[0];
+      return transactions.filter((t) => t.date === dateString);
+    },
+    [transactions]
+  );
 
   // Get high spending days
   const getHighSpendingDays = () => {
@@ -265,10 +280,10 @@ export default function Dashboard() {
               transition={{ duration: 0.5 }}
             >
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                <StatCards
-                  income={income}
-                  expenses={expenses}
-                  savings={savings}
+                <MemoizedStatCards
+                  income={statistics.income}
+                  expenses={statistics.expenses}
+                  savings={statistics.savings}
                 />
               </div>
 
@@ -292,7 +307,7 @@ export default function Dashboard() {
                 <TabsContent value="overview">
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div className="lg:col-span-2 space-y-6">
-                      <SpendingChart
+                      <MemoizedSpendingChart
                         transactions={transactions}
                         isLoading={isLoading}
                       />
@@ -306,7 +321,7 @@ export default function Dashboard() {
                         <h2 className="text-xl font-semibold mb-4">
                           {t.recentTransactions}
                         </h2>
-                        <TransactionList
+                        <MemoizedTransactionList
                           transactions={transactions.slice(0, 5)}
                           isLoading={isLoading}
                         />
@@ -364,7 +379,7 @@ export default function Dashboard() {
                         <h2 className="text-xl font-semibold mb-4">
                           All Transactions
                         </h2>
-                        <TransactionList
+                        <MemoizedTransactionList
                           transactions={transactions}
                           isLoading={isLoading}
                         />
@@ -402,7 +417,7 @@ export default function Dashboard() {
                     </div>
 
                     <div>
-                      <SpendingChart
+                      <MemoizedSpendingChart
                         transactions={transactions}
                         isLoading={isLoading}
                       />

@@ -1,7 +1,14 @@
-"use client"
+"use client";
 
-import { useMemo, useState, useEffect, useCallback } from "react"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
+import { useMemo, useState, useEffect, useCallback } from "react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter,
+} from "@/components/ui/card";
 import {
   LineChart,
   Line,
@@ -17,9 +24,9 @@ import {
   Pie,
   Cell,
   Sector,
-} from "recharts"
-import { Skeleton } from "@/components/ui/skeleton"
-import { motion, AnimatePresence } from "framer-motion"
+} from "recharts";
+import { Skeleton } from "@/components/ui/skeleton";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   TrendingUp,
   ChevronDown,
@@ -31,14 +38,20 @@ import {
   Calendar,
   ArrowUpDown,
   RefreshCw,
-} from "lucide-react"
-import { useLanguage } from "@/contexts/language-context"
-import type { Transaction } from "@/types/transaction"
-import { formatCurrency, formatCompactNumber } from "@/lib/utils"
-import TransactionList from "./transaction-list"
-import { Button } from "@/components/ui/button"
-import { TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+} from "lucide-react";
+import { useLanguage } from "@/contexts/language-context";
+import type { Transaction } from "@/types/transaction";
+import { formatCurrency, formatCompactNumber } from "@/lib/utils";
+import TransactionList from "./transaction-list";
+import { Button } from "@/components/ui/button";
+import { TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,22 +59,23 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Badge } from "@/components/ui/badge"
-import { format, subMonths } from "date-fns"
-import { vi, enUS } from "date-fns/locale"
-import CategoryManager, { type Category } from "./category-manager"
-import EnhancedFinancialCalendar from "./enhanced-financial-calendar"
+} from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
+import { format, subMonths } from "date-fns";
+import { vi, enUS } from "date-fns/locale";
+import CategoryManager, { type Category } from "./category-manager";
+import EnhancedFinancialCalendar from "./enhanced-financial-calendar";
+import React from "react";
 
 interface SpendingChartProps {
-  transactions: Transaction[]
-  isLoading: boolean
+  transactions: Transaction[];
+  isLoading: boolean;
 }
 
 // Chart types
-type ChartType = "line" | "bar" | "pie"
-type TimeRange = "1m" | "3m" | "6m" | "1y" | "all"
-type GroupBy = "day" | "week" | "month" | "category"
+type ChartType = "line" | "bar" | "pie";
+type TimeRange = "1m" | "3m" | "6m" | "1y" | "all";
+type GroupBy = "day" | "week" | "month" | "category";
 
 // Default categories with colors
 const defaultCategories: Category[] = [
@@ -87,102 +101,118 @@ const defaultCategories: Category[] = [
   { id: "freelance", name: "Freelance", color: "#15803d" },
   { id: "business", name: "Business", color: "#166534" },
   { id: "other", name: "Other", color: "#64748b" },
-]
+];
 
-// Format period labels based on groupBy - MOVED BEFORE COMPONENT
-const formatPeriodLabel = (date: Date, groupBy: GroupBy, language: string): string => {
-  if (groupBy === "day") {
-    return format(date, "MMM d", { locale: language === "vi" ? vi : enUS })
-  } else if (groupBy === "week") {
-    return `W${format(date, "w")} ${format(date, "MMM", { locale: language === "vi" ? vi : enUS })}`
-  } else {
-    return format(date, "MMM yyyy", { locale: language === "vi" ? vi : enUS })
-  }
-}
+export default function SpendingChart({
+  transactions,
+  isLoading,
+}: SpendingChartProps) {
+  const { language, translations, currency, exchangeRates, refreshRates } =
+    useLanguage();
+  const [chartType, setChartType] = useState<ChartType>("line");
+  const [timeRange, setTimeRange] = useState<TimeRange>("3m");
+  const [groupBy, setGroupBy] = useState<GroupBy>("month");
+  const [showMobileChart, setShowMobileChart] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [categories, setCategories] = useState<Category[]>(defaultCategories);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
-export default function SpendingChart({ transactions, isLoading }: SpendingChartProps) {
-  const { language, translations, currency, exchangeRates, refreshRates } = useLanguage()
-  const [chartType, setChartType] = useState<ChartType>("line")
-  const [timeRange, setTimeRange] = useState<TimeRange>("3m")
-  const [groupBy, setGroupBy] = useState<GroupBy>("month")
-  const [showMobileChart, setShowMobileChart] = useState(false)
-  const [activeIndex, setActiveIndex] = useState(0)
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
-  const [categories, setCategories] = useState<Category[]>(defaultCategories)
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
-  const [showCalendar, setShowCalendar] = useState(false)
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc")
+  const t = translations[language].spendingChart;
 
-  const t = translations[language].spendingChart
+  // Di chuyển formatPeriodLabel vào đây
+  const formatPeriodLabel = useCallback(
+    (date: Date, groupBy: GroupBy, language: string): string => {
+      if (groupBy === "day") {
+        return format(date, "MMM d", { locale: language === "vi" ? vi : enUS });
+      } else if (groupBy === "week") {
+        return `W${format(date, "w")} ${format(date, "MMM", {
+          locale: language === "vi" ? vi : enUS,
+        })}`;
+      } else {
+        return format(date, "MMM yyyy", {
+          locale: language === "vi" ? vi : enUS,
+        });
+      }
+    },
+    []
+  );
 
   // Load categories from localStorage
   useEffect(() => {
-    const storedCategories = localStorage.getItem("categories")
+    const storedCategories = localStorage.getItem("categories");
     if (storedCategories) {
       try {
-        setCategories(JSON.parse(storedCategories))
+        setCategories(JSON.parse(storedCategories));
       } catch (e) {
-        console.error("Failed to parse stored categories:", e)
+        console.error("Failed to parse stored categories:", e);
       }
     }
-  }, [])
+  }, []);
 
   // Save categories to localStorage when they change
   useEffect(() => {
-    localStorage.setItem("categories", JSON.stringify(categories))
-  }, [categories])
+    localStorage.setItem("categories", JSON.stringify(categories));
+  }, [categories]);
 
   // Filter transactions based on time range
   const filteredTransactions = useMemo(() => {
-    if (timeRange === "all") return transactions
+    if (timeRange === "all") return transactions;
 
-    const now = new Date()
-    let startDate: Date
+    const now = new Date();
+    let startDate: Date;
 
     switch (timeRange) {
       case "1m":
-        startDate = subMonths(now, 1)
-        break
+        startDate = subMonths(now, 1);
+        break;
       case "3m":
-        startDate = subMonths(now, 3)
-        break
+        startDate = subMonths(now, 3);
+        break;
       case "6m":
-        startDate = subMonths(now, 6)
-        break
+        startDate = subMonths(now, 6);
+        break;
       case "1y":
-        startDate = subMonths(now, 12)
-        break
+        startDate = subMonths(now, 12);
+        break;
       default:
-        startDate = subMonths(now, 3)
+        startDate = subMonths(now, 3);
     }
 
     return transactions.filter((t) => {
-      const transDate = new Date(t.date)
-      return transDate >= startDate && transDate <= now
-    })
-  }, [transactions, timeRange])
+      const transDate = new Date(t.date);
+      return transDate >= startDate && transDate <= now;
+    });
+  }, [transactions, timeRange]);
 
   // Filter by selected categories if any
   const categoryFilteredTransactions = useMemo(() => {
-    if (selectedCategories.length === 0) return filteredTransactions
+    if (selectedCategories.length === 0) return filteredTransactions;
 
-    return filteredTransactions.filter((t) => selectedCategories.includes(t.category))
-  }, [filteredTransactions, selectedCategories])
+    return filteredTransactions.filter((t) =>
+      selectedCategories.includes(t.category)
+    );
+  }, [filteredTransactions, selectedCategories]);
 
   // Get recent transactions (last 5)
   const recentTransactions = useMemo(() => {
     return [...categoryFilteredTransactions]
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      .slice(0, 5)
-  }, [categoryFilteredTransactions])
+      .slice(0, 5);
+  }, [categoryFilteredTransactions]);
 
   // Prepare chart data based on groupBy
   const chartData = useMemo(() => {
-    if (categoryFilteredTransactions.length === 0) return []
+    if (categoryFilteredTransactions.length === 0) return [];
 
     if (groupBy === "category") {
       // Group by category
-      const categoryData: Record<string, { category: string; expenses: number; income: number }> = {}
+      const categoryData: Record<
+        string,
+        { category: string; expenses: number; income: number }
+      > = {};
 
       categoryFilteredTransactions.forEach((t) => {
         if (!categoryData[t.category]) {
@@ -190,42 +220,47 @@ export default function SpendingChart({ transactions, isLoading }: SpendingChart
             category: t.category,
             expenses: 0,
             income: 0,
-          }
+          };
         }
 
         if (t.amount < 0) {
-          categoryData[t.category].expenses += Math.abs(t.amount)
+          categoryData[t.category].expenses += Math.abs(t.amount);
         } else {
-          categoryData[t.category].income += t.amount
+          categoryData[t.category].income += t.amount;
         }
-      })
+      });
 
       return Object.values(categoryData).sort((a, b) =>
-        sortOrder === "desc" ? b.expenses - a.expenses : a.expenses - b.expenses,
-      )
+        sortOrder === "desc" ? b.expenses - a.expenses : a.expenses - b.expenses
+      );
     } else {
       // Group by time period
-      const dateFormat = groupBy === "day" ? "yyyy-MM-dd" : groupBy === "week" ? "yyyy-'W'ww" : "yyyy-MM"
+      const dateFormat =
+        groupBy === "day"
+          ? "yyyy-MM-dd"
+          : groupBy === "week"
+          ? "yyyy-'W'ww"
+          : "yyyy-MM";
       const timeData: Record<
         string,
         {
-          period: string
-          expenses: number
-          income: number
-          date: Date
+          period: string;
+          expenses: number;
+          income: number;
+          date: Date;
         }
-      > = {}
+      > = {};
 
       categoryFilteredTransactions.forEach((t) => {
-        const date = new Date(t.date)
-        let period: string
+        const date = new Date(t.date);
+        let period: string;
 
         if (groupBy === "day") {
-          period = format(date, "yyyy-MM-dd")
+          period = format(date, "yyyy-MM-dd");
         } else if (groupBy === "week") {
-          period = format(date, "yyyy-'W'ww")
+          period = format(date, "yyyy-'W'ww");
         } else {
-          period = format(date, "yyyy-MM")
+          period = format(date, "yyyy-MM");
         }
 
         if (!timeData[period]) {
@@ -234,77 +269,112 @@ export default function SpendingChart({ transactions, isLoading }: SpendingChart
             expenses: 0,
             income: 0,
             date,
-          }
+          };
         }
 
         if (t.amount < 0) {
-          timeData[period].expenses += Math.abs(t.amount)
+          timeData[period].expenses += Math.abs(t.amount);
         } else {
-          timeData[period].income += t.amount
+          timeData[period].income += t.amount;
         }
-      })
+      });
 
       return Object.values(timeData)
         .sort((a, b) => a.date.getTime() - b.date.getTime())
         .map((item) => ({
           ...item,
           period: formatPeriodLabel(item.date, groupBy, language),
-        }))
+        }));
     }
-  }, [categoryFilteredTransactions, groupBy, language, sortOrder])
+  }, [categoryFilteredTransactions, groupBy, language, sortOrder]);
 
   // Get category color
   const getCategoryColor = (categoryId: string): string => {
-    const category = categories.find((c) => c.id === categoryId)
-    return category?.color || "#64748b" // Default gray
-  }
+    const category = categories.find((c) => c.id === categoryId);
+    return category?.color || "#64748b"; // Default gray
+  };
 
   // Get category name
   const getCategoryName = (categoryId: string): string => {
-    const category = categories.find((c) => c.id === categoryId)
-    return category?.name || categoryId
-  }
+    const category = categories.find((c) => c.id === categoryId);
+    return category?.name || categoryId;
+  };
 
   // Custom tooltip for charts
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="bg-background p-3 border rounded-md shadow-md"
-        >
-          <p className="font-medium">{label}</p>
-          {payload.map((entry: any, index: number) => {
-            const isExpense = entry.dataKey === "expenses"
-            const isIncome = entry.dataKey === "income"
-            const color = isExpense ? "text-destructive" : isIncome ? "text-primary" : entry.color
+  const CustomTooltip = React.memo(({ active, payload, label }: any) => {
+    if (!active || !payload || payload.length === 0) return null;
 
-            return (
-              <p key={`item-${index}`} className={color}>
-                {entry.name}: {formatCurrency(entry.value, currency, exchangeRates, "VND")}
-              </p>
-            )
-          })}
-        </motion.div>
-      )
-    }
-    return null
-  }
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="bg-background p-3 border rounded-md shadow-md"
+      >
+        <p className="font-medium">{label}</p>
+        {payload.map((entry: any, index: number) => {
+          const isExpense = entry.dataKey === "expenses";
+          const isIncome = entry.dataKey === "income";
+          const color = isExpense
+            ? "text-destructive"
+            : isIncome
+            ? "text-primary"
+            : entry.color;
+
+          return (
+            <p key={`item-${index}`} className={color}>
+              {entry.name}:{" "}
+              {formatCurrency(entry.value, currency, exchangeRates, "VND")}
+            </p>
+          );
+        })}
+      </motion.div>
+    );
+  });
 
   // Custom active shape for pie chart
-  const renderActiveShape = (props: any) => {
-    const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent, value } = props
+  const renderActiveShape = React.memo((props: any) => {
+    const {
+      cx,
+      cy,
+      innerRadius,
+      outerRadius,
+      startAngle,
+      endAngle,
+      fill,
+      payload,
+      percent,
+      value,
+    } = props;
 
     return (
       <g>
-        <text x={cx} y={cy} dy={-20} textAnchor="middle" fill="var(--foreground)" className="text-sm font-medium">
+        <text
+          x={cx}
+          y={cy}
+          dy={-20}
+          textAnchor="middle"
+          fill="var(--foreground)"
+          className="text-sm font-medium"
+        >
           {payload.category}
         </text>
-        <text x={cx} y={cy} textAnchor="middle" fill="var(--foreground)" className="text-lg font-bold">
+        <text
+          x={cx}
+          y={cy}
+          textAnchor="middle"
+          fill="var(--foreground)"
+          className="text-lg font-bold"
+        >
           {formatCurrency(value, currency, exchangeRates, "VND")}
         </text>
-        <text x={cx} y={cy} dy={20} textAnchor="middle" fill="var(--muted-foreground)" className="text-xs">
+        <text
+          x={cx}
+          y={cy}
+          dy={20}
+          textAnchor="middle"
+          fill="var(--muted-foreground)"
+          className="text-xs"
+        >
           {`${(percent * 100).toFixed(1)}%`}
         </text>
         <Sector
@@ -326,44 +396,47 @@ export default function SpendingChart({ transactions, isLoading }: SpendingChart
           fill={fill}
         />
       </g>
-    )
-  }
+    );
+  });
 
   // Handle pie chart hover
   const onPieEnter = useCallback((_: any, index: number) => {
-    setActiveIndex(index)
-  }, [])
+    setActiveIndex(index);
+  }, []);
 
   // Calculate summary statistics
   const summaryStats = useMemo(() => {
     const totalExpenses = categoryFilteredTransactions
       .filter((t) => t.amount < 0)
-      .reduce((sum, t) => sum + Math.abs(t.amount), 0)
+      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
 
-    const totalIncome = categoryFilteredTransactions.filter((t) => t.amount > 0).reduce((sum, t) => sum + t.amount, 0)
+    const totalIncome = categoryFilteredTransactions
+      .filter((t) => t.amount > 0)
+      .reduce((sum, t) => sum + t.amount, 0);
 
-    const balance = totalIncome - totalExpenses
+    const balance = totalIncome - totalExpenses;
 
     // Calculate top spending categories
-    const categorySpending: Record<string, number> = {}
+    const categorySpending: Record<string, number> = {};
     categoryFilteredTransactions
       .filter((t) => t.amount < 0)
       .forEach((t) => {
-        categorySpending[t.category] = (categorySpending[t.category] || 0) + Math.abs(t.amount)
-      })
+        categorySpending[t.category] =
+          (categorySpending[t.category] || 0) + Math.abs(t.amount);
+      });
 
     const topCategories = Object.entries(categorySpending)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 3)
-      .map(([category, amount]) => ({ category, amount }))
+      .map(([category, amount]) => ({ category, amount }));
 
     return {
       totalExpenses,
       totalIncome,
       balance,
       topCategories,
-    }
-  }, [categoryFilteredTransactions])
+    };
+  }, [categoryFilteredTransactions]);
 
   if (isLoading) {
     return (
@@ -381,7 +454,7 @@ export default function SpendingChart({ transactions, isLoading }: SpendingChart
           </div>
         </CardContent>
       </Card>
-    )
+    );
   }
 
   // Empty state for no data
@@ -395,15 +468,21 @@ export default function SpendingChart({ transactions, isLoading }: SpendingChart
           <div className="flex flex-col items-center justify-center h-full">
             <TrendingUp className="h-16 w-16 text-muted-foreground opacity-50 mb-3" />
             <h3 className="text-lg font-medium">{t.noData}</h3>
-            <p className="text-sm text-muted-foreground mt-1 max-w-xs text-center">{t.addDataPrompt}</p>
+            <p className="text-sm text-muted-foreground mt-1 max-w-xs text-center">
+              {t.addDataPrompt}
+            </p>
           </div>
         </CardContent>
       </Card>
-    )
+    );
   }
 
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <div>
@@ -412,12 +491,12 @@ export default function SpendingChart({ transactions, isLoading }: SpendingChart
               {timeRange === "all"
                 ? "All time"
                 : timeRange === "1m"
-                  ? "Last month"
-                  : timeRange === "3m"
-                    ? "Last 3 months"
-                    : timeRange === "6m"
-                      ? "Last 6 months"
-                      : "Last year"}
+                ? "Last month"
+                : timeRange === "3m"
+                ? "Last 3 months"
+                : timeRange === "6m"
+                ? "Last 6 months"
+                : "Last year"}
             </CardDescription>
           </div>
 
@@ -435,24 +514,41 @@ export default function SpendingChart({ transactions, isLoading }: SpendingChart
                 {categories.map((category) => (
                   <DropdownMenuCheckboxItem
                     key={category.id}
-                    checked={selectedCategories.includes(category.id) || selectedCategories.length === 0}
+                    checked={
+                      selectedCategories.includes(category.id) ||
+                      selectedCategories.length === 0
+                    }
                     onCheckedChange={(checked) => {
                       if (checked) {
-                        setSelectedCategories((prev) => (prev.includes(category.id) ? prev : [...prev, category.id]))
+                        setSelectedCategories((prev) =>
+                          prev.includes(category.id)
+                            ? prev
+                            : [...prev, category.id]
+                        );
                       } else {
-                        setSelectedCategories((prev) => prev.filter((id) => id !== category.id))
+                        setSelectedCategories((prev) =>
+                          prev.filter((id) => id !== category.id)
+                        );
                       }
                     }}
                   >
                     <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: category.color }} />
+                      <div
+                        className="w-2 h-2 rounded-full"
+                        style={{ backgroundColor: category.color }}
+                      />
                       <span>{category.name}</span>
                     </div>
                   </DropdownMenuCheckboxItem>
                 ))}
                 <DropdownMenuSeparator />
                 <div className="px-2 py-1.5">
-                  <Button variant="outline" size="sm" className="w-full" onClick={() => setSelectedCategories([])}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => setSelectedCategories([])}
+                  >
                     Reset Filters
                   </Button>
                 </div>
@@ -463,16 +559,28 @@ export default function SpendingChart({ transactions, isLoading }: SpendingChart
               variant="outline"
               size="icon"
               className="h-8 w-8"
-              onClick={() => setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"))}
+              onClick={() =>
+                setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"))
+              }
             >
               <ArrowUpDown className="h-3.5 w-3.5" />
             </Button>
 
-            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setShowCalendar((prev) => !prev)}>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setShowCalendar((prev) => !prev)}
+            >
               <Calendar className="h-3.5 w-3.5" />
             </Button>
 
-            <Button variant="outline" size="icon" className="h-8 w-8" onClick={refreshRates}>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={refreshRates}
+            >
               <RefreshCw className="h-3.5 w-3.5" />
             </Button>
 
@@ -499,7 +607,10 @@ export default function SpendingChart({ transactions, isLoading }: SpendingChart
         <CardContent className="px-2 pb-0">
           <div className="flex flex-wrap items-center justify-between gap-2 px-2 mb-4">
             <div className="flex flex-wrap items-center gap-2">
-              <Select value={timeRange} onValueChange={(value) => setTimeRange(value as TimeRange)}>
+              <Select
+                value={timeRange}
+                onValueChange={(value) => setTimeRange(value as TimeRange)}
+              >
                 <SelectTrigger className="h-8 w-[120px]">
                   <SelectValue placeholder="Time Range" />
                 </SelectTrigger>
@@ -512,7 +623,10 @@ export default function SpendingChart({ transactions, isLoading }: SpendingChart
                 </SelectContent>
               </Select>
 
-              <Select value={groupBy} onValueChange={(value) => setGroupBy(value as GroupBy)}>
+              <Select
+                value={groupBy}
+                onValueChange={(value) => setGroupBy(value as GroupBy)}
+              >
                 <SelectTrigger className="h-8 w-[120px]">
                   <SelectValue placeholder="Group By" />
                 </SelectTrigger>
@@ -530,21 +644,33 @@ export default function SpendingChart({ transactions, isLoading }: SpendingChart
                 <TabsTrigger
                   value="line"
                   onClick={() => setChartType("line")}
-                  className={chartType === "line" ? "bg-primary text-primary-foreground" : ""}
+                  className={
+                    chartType === "line"
+                      ? "bg-primary text-primary-foreground"
+                      : ""
+                  }
                 >
                   <LineChartIcon className="h-3.5 w-3.5" />
                 </TabsTrigger>
                 <TabsTrigger
                   value="bar"
                   onClick={() => setChartType("bar")}
-                  className={chartType === "bar" ? "bg-primary text-primary-foreground" : ""}
+                  className={
+                    chartType === "bar"
+                      ? "bg-primary text-primary-foreground"
+                      : ""
+                  }
                 >
                   <BarChart3 className="h-3.5 w-3.5" />
                 </TabsTrigger>
                 <TabsTrigger
                   value="pie"
                   onClick={() => setChartType("pie")}
-                  className={chartType === "pie" ? "bg-primary text-primary-foreground" : ""}
+                  className={
+                    chartType === "pie"
+                      ? "bg-primary text-primary-foreground"
+                      : ""
+                  }
                 >
                   <PieChartIcon className="h-3.5 w-3.5" />
                 </TabsTrigger>
@@ -562,9 +688,16 @@ export default function SpendingChart({ transactions, isLoading }: SpendingChart
             <Card className="bg-primary/5 border-primary/10">
               <CardContent className="p-4">
                 <div className="flex flex-col">
-                  <span className="text-sm text-muted-foreground">Total Income</span>
+                  <span className="text-sm text-muted-foreground">
+                    Total Income
+                  </span>
                   <span className="text-2xl font-bold text-primary">
-                    {formatCurrency(summaryStats.totalIncome, currency, exchangeRates, "VND")}
+                    {formatCurrency(
+                      summaryStats.totalIncome,
+                      currency,
+                      exchangeRates,
+                      "VND"
+                    )}
                   </span>
                 </div>
               </CardContent>
@@ -573,24 +706,44 @@ export default function SpendingChart({ transactions, isLoading }: SpendingChart
             <Card className="bg-destructive/5 border-destructive/10">
               <CardContent className="p-4">
                 <div className="flex flex-col">
-                  <span className="text-sm text-muted-foreground">Total Expenses</span>
+                  <span className="text-sm text-muted-foreground">
+                    Total Expenses
+                  </span>
                   <span className="text-2xl font-bold text-destructive">
-                    {formatCurrency(summaryStats.totalExpenses, currency, exchangeRates, "VND")}
+                    {formatCurrency(
+                      summaryStats.totalExpenses,
+                      currency,
+                      exchangeRates,
+                      "VND"
+                    )}
                   </span>
                 </div>
               </CardContent>
             </Card>
 
             <Card
-              className={`${summaryStats.balance >= 0 ? "bg-primary/5 border-primary/10" : "bg-destructive/5 border-destructive/10"}`}
+              className={`${
+                summaryStats.balance >= 0
+                  ? "bg-primary/5 border-primary/10"
+                  : "bg-destructive/5 border-destructive/10"
+              }`}
             >
               <CardContent className="p-4">
                 <div className="flex flex-col">
                   <span className="text-sm text-muted-foreground">Balance</span>
                   <span
-                    className={`text-2xl font-bold ${summaryStats.balance >= 0 ? "text-primary" : "text-destructive"}`}
+                    className={`text-2xl font-bold ${
+                      summaryStats.balance >= 0
+                        ? "text-primary"
+                        : "text-destructive"
+                    }`}
                   >
-                    {formatCurrency(summaryStats.balance, currency, exchangeRates, "VND")}
+                    {formatCurrency(
+                      summaryStats.balance,
+                      currency,
+                      exchangeRates,
+                      "VND"
+                    )}
                   </span>
                 </div>
               </CardContent>
@@ -599,7 +752,9 @@ export default function SpendingChart({ transactions, isLoading }: SpendingChart
 
           <div
             className={`transition-all duration-300 overflow-hidden ${
-              showMobileChart ? "h-[400px] opacity-100" : "h-0 md:h-[400px] opacity-0 md:opacity-100"
+              showMobileChart
+                ? "h-[400px] opacity-100"
+                : "h-0 md:h-[400px] opacity-0 md:opacity-100"
             }`}
           >
             <div className="h-full w-full">
@@ -613,28 +768,42 @@ export default function SpendingChart({ transactions, isLoading }: SpendingChart
                   className="h-full w-full"
                 >
                   {chartType === "line" && (
-                    <ResponsiveContainer width="100%" height="100%" aria-label={t.ariaLabel}>
-                      <LineChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                    <ResponsiveContainer
+                      width="100%"
+                      height="100%"
+                      aria-label={t.ariaLabel}
+                    >
+                      <LineChart
+                        data={chartData}
+                        margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                      >
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          stroke="var(--border)"
+                        />
                         <XAxis
-                          dataKey={groupBy === "category" ? "category" : "period"}
+                          dataKey={
+                            groupBy === "category" ? "category" : "period"
+                          }
                           stroke="var(--foreground)"
                           tick={{ fill: "var(--foreground)" }}
                           tickFormatter={(value) => {
                             if (groupBy === "category") {
                               return (
                                 getCategoryName(value).substring(0, 10) +
-                                (getCategoryName(value).length > 10 ? "..." : "")
-                              )
+                                (getCategoryName(value).length > 10
+                                  ? "..."
+                                  : "")
+                              );
                             }
-                            return value
+                            return value;
                           }}
                         />
                         <YAxis
                           stroke="var(--foreground)"
                           tick={{ fill: "var(--foreground)" }}
                           tickFormatter={(value) => {
-                            return formatCompactNumber(value, language)
+                            return formatCompactNumber(value, language);
                           }}
                         />
                         <Tooltip content={<CustomTooltip />} />
@@ -664,34 +833,53 @@ export default function SpendingChart({ transactions, isLoading }: SpendingChart
                   )}
 
                   {chartType === "bar" && (
-                    <ResponsiveContainer width="100%" height="100%" aria-label={t.ariaLabel}>
-                      <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                    <ResponsiveContainer
+                      width="100%"
+                      height="100%"
+                      aria-label={t.ariaLabel}
+                    >
+                      <BarChart
+                        data={chartData}
+                        margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                      >
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          stroke="var(--border)"
+                        />
                         <XAxis
-                          dataKey={groupBy === "category" ? "category" : "period"}
+                          dataKey={
+                            groupBy === "category" ? "category" : "period"
+                          }
                           stroke="var(--foreground)"
                           tick={{ fill: "var(--foreground)" }}
                           tickFormatter={(value) => {
                             if (groupBy === "category") {
                               return (
                                 getCategoryName(value).substring(0, 10) +
-                                (getCategoryName(value).length > 10 ? "..." : "")
-                              )
+                                (getCategoryName(value).length > 10
+                                  ? "..."
+                                  : "")
+                              );
                             }
-                            return value
+                            return value;
                           }}
                         />
                         <YAxis
                           stroke="var(--foreground)"
                           tick={{ fill: "var(--foreground)" }}
                           tickFormatter={(value) => {
-                            return formatCompactNumber(value, language)
+                            return formatCompactNumber(value, language);
                           }}
                         />
                         <Tooltip content={<CustomTooltip />} />
                         <Legend />
                         {groupBy !== "category" && (
-                          <Bar dataKey="income" fill="hsl(var(--primary))" name={t.income} radius={[4, 4, 0, 0]} />
+                          <Bar
+                            dataKey="income"
+                            fill="hsl(var(--primary))"
+                            name={t.income}
+                            radius={[4, 4, 0, 0]}
+                          />
                         )}
                         <Bar
                           dataKey="expenses"
@@ -704,7 +892,11 @@ export default function SpendingChart({ transactions, isLoading }: SpendingChart
                   )}
 
                   {chartType === "pie" && (
-                    <ResponsiveContainer width="100%" height="100%" aria-label={t.ariaLabel}>
+                    <ResponsiveContainer
+                      width="100%"
+                      height="100%"
+                      aria-label={t.ariaLabel}
+                    >
                       <PieChart>
                         <Pie
                           activeIndex={activeIndex}
@@ -730,7 +922,9 @@ export default function SpendingChart({ transactions, isLoading }: SpendingChart
                           dataKey="value"
                           nameKey={groupBy === "category" ? "name" : "period"}
                           onMouseEnter={onPieEnter}
-                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                          label={({ name, percent }) =>
+                            `${name}: ${(percent * 100).toFixed(0)}%`
+                          }
                           labelLine={false}
                         >
                           {chartData.map((entry, index) => (
@@ -764,31 +958,51 @@ export default function SpendingChart({ transactions, isLoading }: SpendingChart
           ) : (
             <div className="mt-4">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="font-medium">{translations[language].dashboard.recentTransactions}</h3>
+                <h3 className="font-medium">
+                  {translations[language].dashboard.recentTransactions}
+                </h3>
                 {summaryStats.topCategories.length > 0 && (
                   <div className="flex flex-wrap gap-2">
                     {summaryStats.topCategories.map(({ category, amount }) => (
-                      <Badge key={category} variant="outline" className="bg-muted/50">
+                      <Badge
+                        key={category}
+                        variant="outline"
+                        className="bg-muted/50"
+                      >
                         <div
                           className="w-2 h-2 rounded-full mr-1"
-                          style={{ backgroundColor: getCategoryColor(category) }}
+                          style={{
+                            backgroundColor: getCategoryColor(category),
+                          }}
                         />
                         <span>{getCategoryName(category)}</span>
                         <span className="ml-1 text-xs opacity-70">
-                          {formatCurrency(amount, currency, exchangeRates, "VND")}
+                          {formatCurrency(
+                            amount,
+                            currency,
+                            exchangeRates,
+                            "VND"
+                          )}
                         </span>
                       </Badge>
                     ))}
                   </div>
                 )}
               </div>
-              <TransactionList transactions={recentTransactions} isLoading={false} />
+              <TransactionList
+                transactions={recentTransactions}
+                isLoading={false}
+              />
             </div>
           )}
         </CardContent>
 
         <CardFooter className="flex justify-between pt-4">
-          <Button variant="outline" size="sm" onClick={() => setShowCalendar((prev) => !prev)}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowCalendar((prev) => !prev)}
+          >
             {showCalendar ? "Show Transactions" : "Show Calendar"}
           </Button>
 
@@ -798,6 +1012,5 @@ export default function SpendingChart({ transactions, isLoading }: SpendingChart
         </CardFooter>
       </Card>
     </motion.div>
-  )
+  );
 }
-

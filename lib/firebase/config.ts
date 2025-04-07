@@ -1,6 +1,10 @@
 import { initializeApp, getApps } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import {
+  getFirestore,
+  connectFirestoreEmulator,
+  initializeFirestore,
+} from "firebase/firestore";
 import { getFunctions } from "firebase/functions";
 
 const firebaseConfig = {
@@ -15,7 +19,15 @@ const firebaseConfig = {
 // Khởi tạo Firebase chỉ một lần
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
 const auth = getAuth(app);
-const db = getFirestore(app);
+
+// Tạo Firestore với cấu hình nâng cao để khắc phục lỗi ERR_QUIC_PROTOCOL_ERROR
+// const db = getFirestore(app);
+
+// Buộc sử dụng long polling thay vì WebChannel/QUIC để tránh lỗi kết nối
+const db = initializeFirestore(app, {
+  experimentalForceLongPolling: true, // Sử dụng long polling thay vì WebChannel (QUIC)
+});
+
 const functions = getFunctions(app);
 
 export { app, auth, db, functions };

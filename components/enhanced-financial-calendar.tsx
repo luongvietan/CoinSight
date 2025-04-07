@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useCallback } from "react";
 import {
   format,
   isSameDay,
@@ -11,24 +11,103 @@ import {
   startOfMonth,
   endOfMonth,
   eachDayOfInterval,
-} from "date-fns"
-import { vi, enUS } from "date-fns/locale"
-import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, CalendarIcon } from "lucide-react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
-import type { Transaction } from "@/types/transaction"
-import { formatCurrency } from "@/lib/utils"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { motion, AnimatePresence } from "framer-motion"
-import { useLanguage } from "@/contexts/language-context"
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+} from "date-fns";
+import { vi, enUS } from "date-fns/locale";
+import {
+  ChevronLeft,
+  ChevronRight,
+  TrendingUp,
+  TrendingDown,
+  CalendarIcon,
+} from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import type { Transaction } from "@/types/transaction";
+import { formatCurrency } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { motion, AnimatePresence } from "framer-motion";
+import { useLanguage } from "@/contexts/language-context";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import React from "react";
+
+// Tối ưu hiệu suất bằng việc tách component con
+const DayCell = React.memo(
+  ({
+    day,
+    isCurrentMonth,
+    isHighSpending,
+    isIncomeDay,
+    isTransactionDay,
+    isSelected,
+    onClick,
+  }) => {
+    const dayClass = useMemo(() => {
+      let baseClass =
+        "flex items-center justify-center h-10 w-10 rounded-full relative cursor-pointer transition-colors";
+
+      if (!isCurrentMonth) {
+        baseClass += " text-muted-foreground opacity-40";
+      }
+
+      if (isToday(day)) {
+        baseClass += " font-bold ring-1 ring-primary/30";
+      }
+
+      if (isSelected) {
+        baseClass += " bg-primary text-primary-foreground";
+      } else if (isHighSpending) {
+        baseClass += " hover:bg-destructive/20";
+      } else if (isIncomeDay) {
+        baseClass += " hover:bg-primary/20";
+      } else {
+        baseClass += " hover:bg-accent";
+      }
+
+      return baseClass;
+    }, [
+      day,
+      isCurrentMonth,
+      isHighSpending,
+      isIncomeDay,
+      isTransactionDay,
+      isSelected,
+    ]);
+
+    return (
+      <div className={dayClass} onClick={() => onClick(day)}>
+        {format(day, "d")}
+        {isHighSpending && (
+          <span className="absolute bottom-0 right-0 h-2 w-2 bg-destructive rounded-full" />
+        )}
+        {isIncomeDay && (
+          <span className="absolute bottom-0 left-0 h-2 w-2 bg-primary rounded-full" />
+        )}
+        {isTransactionDay && !isHighSpending && !isIncomeDay && (
+          <span className="absolute bottom-0 left-0 h-2 w-2 bg-accent-foreground rounded-full" />
+        )}
+      </div>
+    );
+  }
+);
 
 interface EnhancedFinancialCalendarProps {
-  transactions: Transaction[]
-  onSelectDate: (date: Date | null) => void
-  selectedDate: Date | null
-  isLoading?: boolean
+  transactions: Transaction[];
+  onSelectDate: (date: Date | null) => void;
+  selectedDate: Date | null;
+  isLoading?: boolean;
 }
 
 export default function EnhancedFinancialCalendar({
@@ -37,29 +116,29 @@ export default function EnhancedFinancialCalendar({
   selectedDate,
   isLoading = false,
 }: EnhancedFinancialCalendarProps) {
-  const { language, translations, currency, exchangeRates } = useLanguage()
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [calendarView, setCalendarView] = useState<"month" | "year">("month")
-  const [currentMonth, setCurrentMonth] = useState(new Date())
-  const [showTransactions, setShowTransactions] = useState(true)
+  const { language, translations, currency, exchangeRates } = useLanguage();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [calendarView, setCalendarView] = useState<"month" | "year">("month");
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [showTransactions, setShowTransactions] = useState(true);
 
-  const t = translations[language].financialCalendar
+  const t = translations[language].financialCalendar;
 
-  // Calculate daily spending data
+  // Tất cả các tính toán dữ liệu hàng ngày được memoize
   const dailyData = useMemo(() => {
     const data = new Map<
       string,
       {
-        date: Date
-        expenses: number
-        income: number
-        transactions: Transaction[]
+        date: Date;
+        expenses: number;
+        income: number;
+        transactions: Transaction[];
       }
-    >()
+    >();
 
     transactions.forEach((transaction) => {
-      const date = new Date(transaction.date)
-      const dateKey = date.toISOString().split("T")[0]
+      const date = new Date(transaction.date);
+      const dateKey = date.toISOString().split("T")[0];
 
       if (!data.has(dateKey)) {
         data.set(dateKey, {
@@ -67,63 +146,63 @@ export default function EnhancedFinancialCalendar({
           expenses: 0,
           income: 0,
           transactions: [],
-        })
+        });
       }
 
-      const dayData = data.get(dateKey)!
+      const dayData = data.get(dateKey)!;
 
       if (transaction.amount < 0) {
-        dayData.expenses += Math.abs(transaction.amount)
+        dayData.expenses += Math.abs(transaction.amount);
       } else {
-        dayData.income += transaction.amount
+        dayData.income += transaction.amount;
       }
 
-      dayData.transactions.push(transaction)
-    })
+      dayData.transactions.push(transaction);
+    });
 
-    return data
-  }, [transactions])
+    return data;
+  }, [transactions]);
 
-  // Get high spending days (top 25% of spending days)
   const highSpendingDays = useMemo(() => {
     const spendingDays = Array.from(dailyData.values())
       .filter((day) => day.expenses > 0)
-      .sort((a, b) => b.expenses - a.expenses)
+      .sort((a, b) => b.expenses - a.expenses);
 
-    if (spendingDays.length === 0) return []
+    if (spendingDays.length === 0) return [];
 
     // Get top 25% of spending days
     const threshold = Math.max(
       spendingDays[0]?.expenses * 0.5 || 0, // At least 50% of highest spending
-      spendingDays[Math.floor(spendingDays.length * 0.25)]?.expenses || 0,
-    )
+      spendingDays[Math.floor(spendingDays.length * 0.25)]?.expenses || 0
+    );
 
-    return spendingDays.filter((day) => day.expenses >= threshold).map((day) => day.date)
-  }, [dailyData])
+    return spendingDays
+      .filter((day) => day.expenses >= threshold)
+      .map((day) => day.date);
+  }, [dailyData]);
 
-  // Get income days
   const incomeDays = useMemo(() => {
     return Array.from(dailyData.values())
       .filter((day) => day.income > 0)
-      .map((day) => day.date)
-  }, [dailyData])
+      .map((day) => day.date);
+  }, [dailyData]);
 
-  // Get transaction days (that are not high spending or income days)
   const transactionDays = useMemo(() => {
     return Array.from(dailyData.values())
       .filter((day) => {
-        const isHighSpending = highSpendingDays.some((d) => isSameDay(d, day.date))
-        const isIncomeDay = incomeDays.some((d) => isSameDay(d, day.date))
-        return !isHighSpending && !isIncomeDay && day.transactions.length > 0
+        const isHighSpending = highSpendingDays.some((d) =>
+          isSameDay(d, day.date)
+        );
+        const isIncomeDay = incomeDays.some((d) => isSameDay(d, day.date));
+        return !isHighSpending && !isIncomeDay && day.transactions.length > 0;
       })
-      .map((day) => day.date)
-  }, [dailyData, highSpendingDays, incomeDays])
+      .map((day) => day.date);
+  }, [dailyData, highSpendingDays, incomeDays]);
 
-  // Get selected date data
   const selectedDateData = useMemo(() => {
-    if (!selectedDate) return null
+    if (!selectedDate) return null;
 
-    const dateKey = selectedDate.toISOString().split("T")[0]
+    const dateKey = selectedDate.toISOString().split("T")[0];
     return (
       dailyData.get(dateKey) || {
         date: selectedDate,
@@ -131,67 +210,40 @@ export default function EnhancedFinancialCalendar({
         income: 0,
         transactions: [],
       }
-    )
-  }, [selectedDate, dailyData])
+    );
+  }, [selectedDate, dailyData]);
 
-  // Get days for current month
   const daysInMonth = useMemo(() => {
-    const start = startOfMonth(currentMonth)
-    const end = endOfMonth(currentMonth)
-    return eachDayOfInterval({ start, end })
-  }, [currentMonth])
+    const start = startOfMonth(currentMonth);
+    const end = endOfMonth(currentMonth);
+    return eachDayOfInterval({ start, end });
+  }, [currentMonth]);
 
-  // Handle date selection
-  const handleDateClick = (date: Date) => {
-    onSelectDate(date)
-    setIsDialogOpen(true)
-  }
+  // Convert handlers to useCallback
+  const handleDateClick = useCallback(
+    (date: Date) => {
+      onSelectDate(date);
+      setIsDialogOpen(true);
+    },
+    [onSelectDate]
+  );
 
-  // Navigate to previous/next month
-  const navigateMonth = (direction: "prev" | "next") => {
-    setCurrentMonth((prev) => (direction === "prev" ? subMonths(prev, 1) : addMonths(prev, 1)))
-  }
+  const navigateMonth = useCallback((direction: "prev" | "next") => {
+    setCurrentMonth((prev) =>
+      direction === "prev" ? subMonths(prev, 1) : addMonths(prev, 1)
+    );
+  }, []);
 
-  // Toggle between transactions and calendar view
-  const toggleView = () => {
-    setShowTransactions(!showTransactions)
-  }
+  const toggleView = useCallback(() => {
+    setShowTransactions(!showTransactions);
+  }, [showTransactions]);
 
-  // Get day class based on its status
-  const getDayClass = (day: Date) => {
-    const isSelected = selectedDate && isSameDay(selectedDate, day)
-    const isCurrentMonth = isSameMonth(day, currentMonth)
-    const isHighSpending = highSpendingDays.some((d) => isSameDay(d, day))
-    const isIncomeDay = incomeDays.some((d) => isSameDay(d, day))
-    const isTransactionDay = transactionDays.some((d) => isSameDay(d, day))
-
-    let baseClass = "flex items-center justify-center h-10 w-10 rounded-full relative cursor-pointer transition-colors"
-
-    if (!isCurrentMonth) {
-      baseClass += " text-muted-foreground opacity-40"
-    }
-
-    if (isToday(day)) {
-      baseClass += " font-bold ring-1 ring-primary/30"
-    }
-
-    if (isSelected) {
-      baseClass += " bg-primary text-primary-foreground"
-    } else if (isHighSpending) {
-      baseClass += " hover:bg-destructive/20"
-    } else if (isIncomeDay) {
-      baseClass += " hover:bg-primary/20"
-    } else {
-      baseClass += " hover:bg-accent"
-    }
-
-    return baseClass
-  }
-
-  // Get recent transactions (last 5)
+  // Tối ưu recentTransactions bằng useMemo
   const recentTransactions = useMemo(() => {
-    return [...transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5)
-  }, [transactions])
+    return [...transactions]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 5);
+  }, [transactions]);
 
   return (
     <Card className="overflow-hidden">
@@ -201,7 +253,11 @@ export default function EnhancedFinancialCalendar({
             <CalendarIcon className="h-5 w-5 text-muted-foreground" />
             {t.title}
           </CardTitle>
-          <Tabs value={calendarView} onValueChange={(v) => setCalendarView(v as any)} className="w-auto">
+          <Tabs
+            value={calendarView}
+            onValueChange={(v) => setCalendarView(v as any)}
+            className="w-auto"
+          >
             <TabsList className="h-8">
               <TabsTrigger value="month" className="px-3 text-xs">
                 Month
@@ -217,13 +273,25 @@ export default function EnhancedFinancialCalendar({
       <TabsContent value="month" className="m-0 p-0">
         <CardContent className="p-0">
           <div className="flex items-center justify-between bg-muted/30 px-4 py-2 border-b">
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigateMonth("prev")}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => navigateMonth("prev")}
+            >
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <h3 className="text-base font-medium">
-              {format(currentMonth, "MMMM yyyy", { locale: language === "vi" ? vi : enUS })}
+              {format(currentMonth, "MMMM yyyy", {
+                locale: language === "vi" ? vi : enUS,
+              })}
             </h3>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigateMonth("next")}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => navigateMonth("next")}
+            >
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
@@ -244,67 +312,86 @@ export default function EnhancedFinancialCalendar({
             {/* Calendar grid */}
             <div className="grid grid-cols-7 gap-1">
               {/* Previous month days */}
-              {Array.from({ length: new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay() }).map(
-                (_, i) => {
-                  const day = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), -i)
-                  return (
-                    <div key={`prev-${i}`} className={getDayClass(day)} onClick={() => handleDateClick(day)}>
-                      {format(day, "d")}
-                      {/* Indicators */}
-                      <div className="absolute bottom-1 left-0 right-0 flex justify-center gap-0.5">
-                        {highSpendingDays.some((d) => isSameDay(d, day)) && (
-                          <div className="h-1 w-1 rounded-full bg-destructive" />
-                        )}
-                        {incomeDays.some((d) => isSameDay(d, day)) && (
-                          <div className="h-1 w-1 rounded-full bg-primary" />
-                        )}
-                        {transactionDays.some((d) => isSameDay(d, day)) && (
-                          <div className="h-1 w-1 rounded-full bg-muted-foreground" />
-                        )}
-                      </div>
-                    </div>
-                  )
-                },
-              )}
+              {Array.from({
+                length: new Date(
+                  currentMonth.getFullYear(),
+                  currentMonth.getMonth(),
+                  1
+                ).getDay(),
+              }).map((_, i) => {
+                const day = new Date(
+                  currentMonth.getFullYear(),
+                  currentMonth.getMonth(),
+                  -i
+                );
+                return (
+                  <DayCell
+                    key={`prev-${i}`}
+                    day={day}
+                    isCurrentMonth={isSameMonth(day, currentMonth)}
+                    isHighSpending={highSpendingDays.some((d) =>
+                      isSameDay(d, day)
+                    )}
+                    isIncomeDay={incomeDays.some((d) => isSameDay(d, day))}
+                    isTransactionDay={transactionDays.some((d) =>
+                      isSameDay(d, day)
+                    )}
+                    isSelected={selectedDate && isSameDay(selectedDate, day)}
+                    onClick={handleDateClick}
+                  />
+                );
+              })}
 
               {/* Current month days */}
               {daysInMonth.map((day) => (
-                <div key={day.toISOString()} className={getDayClass(day)} onClick={() => handleDateClick(day)}>
-                  {format(day, "d")}
-                  {/* Indicators */}
-                  <div className="absolute bottom-1 left-0 right-0 flex justify-center gap-0.5">
-                    {highSpendingDays.some((d) => isSameDay(d, day)) && (
-                      <div className="h-1 w-1 rounded-full bg-destructive" />
-                    )}
-                    {incomeDays.some((d) => isSameDay(d, day)) && <div className="h-1 w-1 rounded-full bg-primary" />}
-                    {transactionDays.some((d) => isSameDay(d, day)) && (
-                      <div className="h-1 w-1 rounded-full bg-muted-foreground" />
-                    )}
-                  </div>
-                </div>
+                <DayCell
+                  key={day.toISOString()}
+                  day={day}
+                  isCurrentMonth={isSameMonth(day, currentMonth)}
+                  isHighSpending={highSpendingDays.some((d) =>
+                    isSameDay(d, day)
+                  )}
+                  isIncomeDay={incomeDays.some((d) => isSameDay(d, day))}
+                  isTransactionDay={transactionDays.some((d) =>
+                    isSameDay(d, day)
+                  )}
+                  isSelected={selectedDate && isSameDay(selectedDate, day)}
+                  onClick={handleDateClick}
+                />
               ))}
 
               {/* Next month days to fill grid */}
               {Array.from({
                 length:
-                  42 - (daysInMonth.length + new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay()),
+                  42 -
+                  (daysInMonth.length +
+                    new Date(
+                      currentMonth.getFullYear(),
+                      currentMonth.getMonth(),
+                      1
+                    ).getDay()),
               }).map((_, i) => {
-                const day = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, i + 1)
+                const day = new Date(
+                  currentMonth.getFullYear(),
+                  currentMonth.getMonth() + 1,
+                  i + 1
+                );
                 return (
-                  <div key={`next-${i}`} className={getDayClass(day)} onClick={() => handleDateClick(day)}>
-                    {format(day, "d")}
-                    {/* Indicators */}
-                    <div className="absolute bottom-1 left-0 right-0 flex justify-center gap-0.5">
-                      {highSpendingDays.some((d) => isSameDay(d, day)) && (
-                        <div className="h-1 w-1 rounded-full bg-destructive" />
-                      )}
-                      {incomeDays.some((d) => isSameDay(d, day)) && <div className="h-1 w-1 rounded-full bg-primary" />}
-                      {transactionDays.some((d) => isSameDay(d, day)) && (
-                        <div className="h-1 w-1 rounded-full bg-muted-foreground" />
-                      )}
-                    </div>
-                  </div>
-                )
+                  <DayCell
+                    key={`next-${i}`}
+                    day={day}
+                    isCurrentMonth={isSameMonth(day, currentMonth)}
+                    isHighSpending={highSpendingDays.some((d) =>
+                      isSameDay(d, day)
+                    )}
+                    isIncomeDay={incomeDays.some((d) => isSameDay(d, day))}
+                    isTransactionDay={transactionDays.some((d) =>
+                      isSameDay(d, day)
+                    )}
+                    isSelected={selectedDate && isSameDay(selectedDate, day)}
+                    onClick={handleDateClick}
+                  />
+                );
               })}
             </div>
           </div>
@@ -330,30 +417,36 @@ export default function EnhancedFinancialCalendar({
         <CardContent className="p-4">
           <div className="grid grid-cols-4 gap-2">
             {Array.from({ length: 12 }).map((_, i) => {
-              const month = new Date(currentMonth.getFullYear(), i, 1)
-              const monthName = format(month, "MMM", { locale: language === "vi" ? vi : enUS })
-              const isCurrentMonthSelected = isSameMonth(month, currentMonth)
+              const month = new Date(currentMonth.getFullYear(), i, 1);
+              const monthName = format(month, "MMM", {
+                locale: language === "vi" ? vi : enUS,
+              });
+              const isCurrentMonthSelected = isSameMonth(month, currentMonth);
 
               // Count transactions in this month
               const transactionsInMonth = transactions.filter((t) => {
-                const date = new Date(t.date)
-                return date.getMonth() === i && date.getFullYear() === currentMonth.getFullYear()
-              })
+                const date = new Date(t.date);
+                return (
+                  date.getMonth() === i &&
+                  date.getFullYear() === currentMonth.getFullYear()
+                );
+              });
 
               // Calculate total spending and income for the month
               const monthData = transactionsInMonth.reduce(
                 (acc, t) => {
                   if (t.amount < 0) {
-                    acc.expenses += Math.abs(t.amount)
+                    acc.expenses += Math.abs(t.amount);
                   } else {
-                    acc.income += t.amount
+                    acc.income += t.amount;
                   }
-                  return acc
+                  return acc;
                 },
-                { expenses: 0, income: 0 },
-              )
+                { expenses: 0, income: 0 }
+              );
 
-              const hasHighActivity = transactionsInMonth.length > 5 || monthData.expenses > 5000000
+              const hasHighActivity =
+                transactionsInMonth.length > 5 || monthData.expenses > 5000000;
 
               return (
                 <Button
@@ -363,12 +456,14 @@ export default function EnhancedFinancialCalendar({
                     hasHighActivity ? "border-destructive/30" : ""
                   }`}
                   onClick={() => {
-                    setCurrentMonth(month)
-                    setCalendarView("month")
+                    setCurrentMonth(month);
+                    setCalendarView("month");
                   }}
                 >
                   <span className="text-lg font-medium">{monthName}</span>
-                  <span className="text-xs text-muted-foreground">{currentMonth.getFullYear()}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {currentMonth.getFullYear()}
+                  </span>
                   {transactionsInMonth.length > 0 && (
                     <Badge variant="outline" className="mt-1 text-xs">
                       {transactionsInMonth.length} transactions
@@ -378,7 +473,7 @@ export default function EnhancedFinancialCalendar({
                     <div className="absolute bottom-1 right-1 w-2 h-2 rounded-full bg-destructive" />
                   )}
                 </Button>
-              )
+              );
             })}
           </div>
         </CardContent>
@@ -394,11 +489,16 @@ export default function EnhancedFinancialCalendar({
       </CardFooter>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]" aria-describedby="transaction-details-description">
+        <DialogContent
+          className="sm:max-w-[425px]"
+          aria-describedby="transaction-details-description"
+        >
           <DialogHeader>
             <DialogTitle>
               {selectedDate
-                ? format(selectedDate, "EEEE, MMMM d, yyyy", { locale: language === "vi" ? vi : enUS })
+                ? format(selectedDate, "EEEE, MMMM d, yyyy", {
+                    locale: language === "vi" ? vi : enUS,
+                  })
                 : t.transactionsTitle}
             </DialogTitle>
             <DialogDescription id="transaction-details-description">
@@ -420,7 +520,12 @@ export default function EnhancedFinancialCalendar({
                       <span>Income</span>
                     </div>
                     <p className="text-lg font-bold text-primary">
-                      {formatCurrency(selectedDateData.income || 0, currency, exchangeRates, "VND")}
+                      {formatCurrency(
+                        selectedDateData.income || 0,
+                        currency,
+                        exchangeRates,
+                        "VND"
+                      )}
                     </p>
                   </div>
                   <div className="bg-destructive/10 rounded-lg p-3 text-center">
@@ -429,7 +534,12 @@ export default function EnhancedFinancialCalendar({
                       <span>Expenses</span>
                     </div>
                     <p className="text-lg font-bold text-destructive">
-                      {formatCurrency(selectedDateData.expenses || 0, currency, exchangeRates, "VND")}
+                      {formatCurrency(
+                        selectedDateData.expenses || 0,
+                        currency,
+                        exchangeRates,
+                        "VND"
+                      )}
                     </p>
                   </div>
                 </div>
@@ -447,17 +557,26 @@ export default function EnhancedFinancialCalendar({
                         className="flex items-center justify-between rounded-md border p-3 hover:bg-accent/50 transition-colors"
                       >
                         <div>
-                          <p className="font-medium">{transaction.description}</p>
+                          <p className="font-medium">
+                            {transaction.description}
+                          </p>
                           <Badge variant="outline" className="mt-1">
                             {transaction.category}
                           </Badge>
                         </div>
                         <p
                           className={
-                            transaction.amount < 0 ? "text-destructive font-medium" : "text-primary font-medium"
+                            transaction.amount < 0
+                              ? "text-destructive font-medium"
+                              : "text-primary font-medium"
                           }
                         >
-                          {formatCurrency(transaction.amount, currency, exchangeRates, "VND")}
+                          {formatCurrency(
+                            transaction.amount,
+                            currency,
+                            exchangeRates,
+                            "VND"
+                          )}
                         </p>
                       </motion.div>
                     ))}
@@ -469,6 +588,5 @@ export default function EnhancedFinancialCalendar({
         </DialogContent>
       </Dialog>
     </Card>
-  )
+  );
 }
-

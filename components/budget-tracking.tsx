@@ -1,56 +1,73 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { motion } from "framer-motion"
-import { Plus } from "lucide-react"
-import { Progress } from "@/components/ui/progress"
-import { Button } from "@/components/ui/button"
-import { Skeleton } from "@/components/ui/skeleton"
-import type { Transaction } from "@/types/transaction"
-import type { Budget } from "@/types/budget"
-import { formatCurrency } from "@/lib/utils"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Input } from "@/components/ui/input"
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { Plus } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import type { Transaction } from "@/types/transaction";
+import type { Budget } from "@/types/budget";
+import { formatCurrency } from "@/lib/utils";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 
 interface BudgetTrackingProps {
-  budgets: Budget[]
-  transactions: Transaction[]
-  isLoading: boolean
+  budgets: Budget[];
+  transactions: Transaction[];
+  isLoading: boolean;
 }
 
-export default function BudgetTracking({ budgets, transactions, isLoading }: BudgetTrackingProps) {
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [selectedCategory, setSelectedCategory] = useState("")
-  const [budgetAmount, setBudgetAmount] = useState("")
+export default function BudgetTracking({
+  budgets,
+  transactions,
+  isLoading,
+}: BudgetTrackingProps) {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [budgetAmount, setBudgetAmount] = useState("");
 
   // Calculate spending by category
   const getCategorySpending = (category: string) => {
     return transactions
       .filter((t) => t.category === category && t.amount < 0)
-      .reduce((sum, t) => sum + Math.abs(t.amount), 0)
-  }
+      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+  };
 
   // Calculate budget usage percentage
   const getUsagePercentage = (category: string) => {
-    const budget = budgets.find((b) => b.category === category)
-    if (!budget || budget.amount === 0) return 0
+    const budget = budgets.find((b) => b.category === category);
+    if (!budget || budget.amount === 0) return 0;
 
-    const spending = getCategorySpending(category)
-    return Math.min(Math.round((spending / budget.amount) * 100), 100)
-  }
+    const spending = getCategorySpending(category);
+    return Math.min(Math.round((spending / budget.amount) * 100), 100);
+  };
 
   const handleSaveBudget = () => {
     // In a real app, this would save to your backend
     console.log("Saving budget:", {
       category: selectedCategory,
       amount: Number.parseFloat(budgetAmount),
-    })
+    });
 
-    setIsDialogOpen(false)
-    setSelectedCategory("")
-    setBudgetAmount("")
-  }
+    setIsDialogOpen(false);
+    setSelectedCategory("");
+    setBudgetAmount("");
+  };
 
   if (isLoading) {
     return (
@@ -65,14 +82,19 @@ export default function BudgetTracking({ budgets, transactions, isLoading }: Bud
           </div>
         ))}
       </div>
-    )
+    );
   }
 
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-medium">Category Budgets</h3>
-        <Button variant="outline" size="sm" onClick={() => setIsDialogOpen(true)} className="gap-1">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setIsDialogOpen(true)}
+          className="gap-1"
+        >
           <Plus className="h-3.5 w-3.5" />
           <span>Set Budget</span>
         </Button>
@@ -85,8 +107,8 @@ export default function BudgetTracking({ budgets, transactions, isLoading }: Bud
           </p>
         ) : (
           budgets.map((budget) => {
-            const usage = getUsagePercentage(budget.category)
-            const spending = getCategorySpending(budget.category)
+            const usage = getUsagePercentage(budget.category);
+            const spending = getCategorySpending(budget.category);
 
             return (
               <motion.div
@@ -99,7 +121,9 @@ export default function BudgetTracking({ budgets, transactions, isLoading }: Bud
                   <div className="flex items-center gap-2">
                     <span className="capitalize">{budget.category}</span>
                     {usage > 80 && (
-                      <span className="text-xs text-destructive">{usage >= 100 ? "Exceeded" : "Almost exceeded"}</span>
+                      <span className="text-xs text-destructive">
+                        {usage >= 100 ? "Exceeded" : "Almost exceeded"}
+                      </span>
                     )}
                   </div>
                   <span className="text-sm">
@@ -113,15 +137,21 @@ export default function BudgetTracking({ budgets, transactions, isLoading }: Bud
                   aria-label={`${budget.category} budget usage: ${usage}%`}
                 />
               </motion.div>
-            )
+            );
           })
         )}
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent
+          className="sm:max-w-[425px]"
+          aria-describedby="budget-dialog-description"
+        >
           <DialogHeader>
             <DialogTitle>Set Budget</DialogTitle>
+            <DialogDescription id="budget-dialog-description">
+              Create or update a budget for a specific category.
+            </DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
@@ -129,7 +159,10 @@ export default function BudgetTracking({ budgets, transactions, isLoading }: Bud
               <label htmlFor="category" className="text-sm font-medium">
                 Category
               </label>
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <Select
+                value={selectedCategory}
+                onValueChange={setSelectedCategory}
+              >
                 <SelectTrigger id="category">
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
@@ -161,13 +194,15 @@ export default function BudgetTracking({ budgets, transactions, isLoading }: Bud
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSaveBudget} disabled={!selectedCategory || !budgetAmount}>
+            <Button
+              onClick={handleSaveBudget}
+              disabled={!selectedCategory || !budgetAmount}
+            >
               Save Budget
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
-  )
+  );
 }
-

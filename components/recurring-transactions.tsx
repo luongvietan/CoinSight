@@ -1,25 +1,39 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { Repeat, Plus, Edit2, Trash2, X, Pause, Play } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose, DialogFooter } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Switch } from "@/components/ui/switch"
-import { formatCurrency } from "@/lib/utils"
-import { useLanguage } from "@/contexts/language-context"
-import type { RecurringTransaction } from "@/types/recurring-transaction"
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Repeat, Plus, Edit2, Trash2, X, Pause, Play } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogClose,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { formatCurrency } from "@/lib/utils";
+import { useLanguage } from "@/contexts/language-context";
+import type { RecurringTransaction } from "@/types/recurring-transaction";
 
 interface RecurringTransactionsProps {
-  recurringTransactions: RecurringTransaction[]
-  onAddRecurring: (recurring: RecurringTransaction) => void
-  onUpdateRecurring: (recurring: RecurringTransaction) => void
-  onDeleteRecurring: (recurringId: string) => void
+  recurringTransactions: RecurringTransaction[];
+  onAddRecurring: (recurring: RecurringTransaction) => void;
+  onUpdateRecurring: (recurring: RecurringTransaction) => void;
+  onDeleteRecurring: (recurringId: string) => void;
 }
 
 export default function RecurringTransactions({
@@ -28,11 +42,12 @@ export default function RecurringTransactions({
   onUpdateRecurring,
   onDeleteRecurring,
 }: RecurringTransactionsProps) {
-  const { language, translations } = useLanguage()
-  const t = translations[language].recurring
+  const { language, translations } = useLanguage();
+  const t = translations[language].recurring;
 
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [editingRecurring, setEditingRecurring] = useState<RecurringTransaction | null>(null)
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingRecurring, setEditingRecurring] =
+    useState<RecurringTransaction | null>(null);
   const [formData, setFormData] = useState({
     description: "",
     amount: "",
@@ -40,11 +55,11 @@ export default function RecurringTransactions({
     frequency: "monthly",
     nextDate: "",
     isActive: true,
-  })
+  });
 
   const handleOpenDialog = (recurring?: RecurringTransaction) => {
     if (recurring) {
-      setEditingRecurring(recurring)
+      setEditingRecurring(recurring);
       setFormData({
         description: recurring.description,
         amount: Math.abs(recurring.amount).toString(),
@@ -52,9 +67,9 @@ export default function RecurringTransactions({
         frequency: recurring.frequency,
         nextDate: recurring.nextDate,
         isActive: recurring.isActive,
-      })
+      });
     } else {
-      setEditingRecurring(null)
+      setEditingRecurring(null);
       setFormData({
         description: "",
         amount: "",
@@ -62,10 +77,10 @@ export default function RecurringTransactions({
         frequency: "monthly",
         nextDate: new Date().toISOString().split("T")[0],
         isActive: true,
-      })
+      });
     }
-    setIsDialogOpen(true)
-  }
+    setIsDialogOpen(true);
+  };
 
   const handleSaveRecurring = () => {
     const newRecurring: RecurringTransaction = {
@@ -73,26 +88,30 @@ export default function RecurringTransactions({
       description: formData.description,
       amount: -Math.abs(Number(formData.amount)), // Always negative for expenses
       category: formData.category,
-      frequency: formData.frequency as "daily" | "weekly" | "monthly" | "yearly",
+      frequency: formData.frequency as
+        | "daily"
+        | "weekly"
+        | "monthly"
+        | "yearly",
       nextDate: formData.nextDate,
       isActive: formData.isActive,
-    }
+    };
 
     if (editingRecurring) {
-      onUpdateRecurring(newRecurring)
+      onUpdateRecurring(newRecurring);
     } else {
-      onAddRecurring(newRecurring)
+      onAddRecurring(newRecurring);
     }
 
-    setIsDialogOpen(false)
-  }
+    setIsDialogOpen(false);
+  };
 
   const toggleStatus = (recurring: RecurringTransaction) => {
     onUpdateRecurring({
       ...recurring,
       isActive: !recurring.isActive,
-    })
-  }
+    });
+  };
 
   return (
     <>
@@ -109,7 +128,9 @@ export default function RecurringTransactions({
             <div className="flex flex-col items-center justify-center py-8 text-center">
               <Repeat className="h-12 w-12 text-muted-foreground opacity-50 mb-3" />
               <h3 className="text-lg font-medium">{t.noRecurring}</h3>
-              <p className="text-sm text-muted-foreground mt-1 max-w-xs">{t.addRecurringPrompt}</p>
+              <p className="text-sm text-muted-foreground mt-1 max-w-xs">
+                {t.addRecurringPrompt}
+              </p>
               <Button onClick={() => handleOpenDialog()} className="mt-4">
                 <Plus className="h-4 w-4 mr-2" />
                 {t.addRecurringButton}
@@ -124,7 +145,9 @@ export default function RecurringTransactions({
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, height: 0 }}
-                    className={`border rounded-lg p-4 ${!recurring.isActive ? "opacity-60" : ""}`}
+                    className={`border rounded-lg p-4 ${
+                      !recurring.isActive ? "opacity-60" : ""
+                    }`}
                   >
                     <div className="flex justify-between items-start mb-2">
                       <div>
@@ -132,10 +155,20 @@ export default function RecurringTransactions({
                         <div className="flex flex-wrap gap-2 mt-1">
                           <Badge variant="outline">{recurring.category}</Badge>
                           <Badge variant="outline">
-                            {t.frequency[recurring.frequency as keyof typeof t.frequency]}
+                            {
+                              t.frequency[
+                                recurring.frequency as keyof typeof t.frequency
+                              ]
+                            }
                           </Badge>
-                          <Badge variant={recurring.isActive ? "default" : "secondary"}>
-                            {recurring.isActive ? t.status.active : t.status.paused}
+                          <Badge
+                            variant={
+                              recurring.isActive ? "default" : "secondary"
+                            }
+                          >
+                            {recurring.isActive
+                              ? t.status.active
+                              : t.status.paused}
                           </Badge>
                         </div>
                       </div>
@@ -145,10 +178,16 @@ export default function RecurringTransactions({
                           variant="ghost"
                           onClick={() => toggleStatus(recurring)}
                           aria-label={
-                            recurring.isActive ? "Pause recurring transaction" : "Activate recurring transaction"
+                            recurring.isActive
+                              ? "Pause recurring transaction"
+                              : "Activate recurring transaction"
                           }
                         >
-                          {recurring.isActive ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                          {recurring.isActive ? (
+                            <Pause className="h-4 w-4" />
+                          ) : (
+                            <Play className="h-4 w-4" />
+                          )}
                         </Button>
                         <Button
                           size="icon"
@@ -172,12 +211,18 @@ export default function RecurringTransactions({
                     <div className="grid grid-cols-2 gap-4 mb-3 text-sm">
                       <div>
                         <p className="text-muted-foreground">Amount</p>
-                        <p className="font-medium text-destructive">{formatCurrency(recurring.amount)}</p>
+                        <p className="font-medium text-destructive">
+                          {formatCurrency(recurring.amount)}
+                        </p>
                       </div>
                       <div>
-                        <p className="text-muted-foreground">{t.nextOccurrence}</p>
+                        <p className="text-muted-foreground">
+                          {t.nextOccurrence}
+                        </p>
                         <p className="font-medium">
-                          {new Date(recurring.nextDate).toLocaleDateString(language === "vi" ? "vi-VN" : "en-US")}
+                          {new Date(recurring.nextDate).toLocaleDateString(
+                            language === "vi" ? "vi-VN" : "en-US"
+                          )}
                         </p>
                       </div>
                     </div>
@@ -190,14 +235,15 @@ export default function RecurringTransactions({
       </Card>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader className="flex flex-row items-center justify-between">
-            <DialogTitle>{editingRecurring ? t.editRecurringTitle : t.addRecurringTitle}</DialogTitle>
-            <DialogClose asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <X className="h-4 w-4" />
-              </Button>
-            </DialogClose>
+        <DialogContent
+          className="sm:max-w-[425px]"
+          aria-describedby="recurring-transaction-description"
+        >
+          <DialogHeader>
+            <DialogTitle>Add Recurring Transaction</DialogTitle>
+            <DialogDescription id="recurring-transaction-description">
+              Set up a transaction that repeats automatically.
+            </DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
@@ -206,7 +252,9 @@ export default function RecurringTransactions({
               <Input
                 id="description"
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
               />
             </div>
 
@@ -216,7 +264,9 @@ export default function RecurringTransactions({
                 id="amount"
                 type="number"
                 value={formData.amount}
-                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, amount: e.target.value })
+                }
               />
             </div>
 
@@ -225,7 +275,9 @@ export default function RecurringTransactions({
                 <Label htmlFor="category">Category</Label>
                 <Select
                   value={formData.category}
-                  onValueChange={(value) => setFormData({ ...formData, category: value })}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, category: value })
+                  }
                 >
                   <SelectTrigger id="category">
                     <SelectValue placeholder="Select category" />
@@ -243,7 +295,9 @@ export default function RecurringTransactions({
                 <Label htmlFor="frequency">Frequency</Label>
                 <Select
                   value={formData.frequency}
-                  onValueChange={(value) => setFormData({ ...formData, frequency: value })}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, frequency: value })
+                  }
                 >
                   <SelectTrigger id="frequency">
                     <SelectValue placeholder="Select frequency" />
@@ -251,7 +305,9 @@ export default function RecurringTransactions({
                   <SelectContent>
                     <SelectItem value="daily">{t.frequency.daily}</SelectItem>
                     <SelectItem value="weekly">{t.frequency.weekly}</SelectItem>
-                    <SelectItem value="monthly">{t.frequency.monthly}</SelectItem>
+                    <SelectItem value="monthly">
+                      {t.frequency.monthly}
+                    </SelectItem>
                     <SelectItem value="yearly">{t.frequency.yearly}</SelectItem>
                   </SelectContent>
                 </Select>
@@ -264,7 +320,9 @@ export default function RecurringTransactions({
                 id="nextDate"
                 type="date"
                 value={formData.nextDate}
-                onChange={(e) => setFormData({ ...formData, nextDate: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, nextDate: e.target.value })
+                }
               />
             </div>
 
@@ -272,7 +330,9 @@ export default function RecurringTransactions({
               <Switch
                 id="isActive"
                 checked={formData.isActive}
-                onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
+                onCheckedChange={(checked) =>
+                  setFormData({ ...formData, isActive: checked })
+                }
               />
               <Label htmlFor="isActive">Active</Label>
             </div>
@@ -284,7 +344,9 @@ export default function RecurringTransactions({
             </Button>
             <Button
               onClick={handleSaveRecurring}
-              disabled={!formData.description || !formData.amount || !formData.nextDate}
+              disabled={
+                !formData.description || !formData.amount || !formData.nextDate
+              }
             >
               {t.saveRecurringButton}
             </Button>
@@ -292,6 +354,5 @@ export default function RecurringTransactions({
         </DialogContent>
       </Dialog>
     </>
-  )
+  );
 }
-

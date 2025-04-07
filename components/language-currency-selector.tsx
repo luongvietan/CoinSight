@@ -1,11 +1,11 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { Globe, DollarSign, RefreshCw } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Globe, DollarSign, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,21 +14,29 @@ import {
   DropdownMenuTrigger,
   DropdownMenuLabel,
   DropdownMenuGroup,
-} from "@/components/ui/dropdown-menu"
-import { useLanguage } from "@/contexts/language-context"
-import { Badge } from "@/components/ui/badge"
-import { formatDate } from "@/lib/utils"
+} from "@/components/ui/dropdown-menu";
+import { useLanguage } from "@/contexts/language-context";
+import { Badge } from "@/components/ui/badge";
+import { formatDate } from "@/lib/utils";
 
 export default function LanguageCurrencySelector() {
-  const { language, setLanguage, currency, setCurrency, exchangeRates, isLoadingRates, refreshRates, lastUpdated } =
-    useLanguage()
-  const [isOpen, setIsOpen] = useState(false)
+  const {
+    language,
+    setLanguage,
+    currency,
+    setCurrency,
+    exchangeRates,
+    isLoadingRates,
+    refreshRates,
+    lastUpdated,
+  } = useLanguage();
+  const [isOpen, setIsOpen] = useState(false);
 
   const handleRefreshRates = async (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    await refreshRates()
-  }
+    e.preventDefault();
+    e.stopPropagation();
+    await refreshRates();
+  };
 
   const currencies = [
     { code: "USD", name: "US Dollar", symbol: "$" },
@@ -40,17 +48,21 @@ export default function LanguageCurrencySelector() {
     { code: "AUD", name: "Australian Dollar", symbol: "A$" },
     { code: "CNY", name: "Chinese Yuan", symbol: "¥" },
     { code: "SGD", name: "Singapore Dollar", symbol: "S$" },
-  ]
+  ];
 
   const languages = [
     { code: "en", name: "English", flag: "🇺🇸" },
     { code: "vi", name: "Tiếng Việt", flag: "🇻🇳" },
-  ]
+  ];
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="flex items-center gap-2 h-9 px-3">
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex items-center gap-2 h-9 px-3"
+        >
           <Globe className="h-4 w-4" />
           <span className="uppercase">{language}</span>
           <span className="text-muted-foreground">|</span>
@@ -61,7 +73,7 @@ export default function LanguageCurrencySelector() {
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel>Language</DropdownMenuLabel>
         <DropdownMenuGroup>
-          <AnimatePresence mode="wait">
+          <AnimatePresence mode="sync">
             {languages.map((lang) => (
               <motion.div
                 key={lang.code}
@@ -100,7 +112,9 @@ export default function LanguageCurrencySelector() {
             onClick={handleRefreshRates}
             disabled={isLoadingRates}
           >
-            <RefreshCw className={`h-3.5 w-3.5 ${isLoadingRates ? "animate-spin" : ""}`} />
+            <RefreshCw
+              className={`h-3.5 w-3.5 ${isLoadingRates ? "animate-spin" : ""}`}
+            />
           </Button>
         </DropdownMenuLabel>
 
@@ -111,7 +125,7 @@ export default function LanguageCurrencySelector() {
         )}
 
         <DropdownMenuGroup className="max-h-[200px] overflow-y-auto">
-          <AnimatePresence mode="wait">
+          <AnimatePresence mode="sync">
             {currencies.map((curr) => (
               <motion.div
                 key={curr.code}
@@ -157,6 +171,5 @@ export default function LanguageCurrencySelector() {
         </div>
       </DropdownMenuContent>
     </DropdownMenu>
-  )
+  );
 }
-
