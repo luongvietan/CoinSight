@@ -1,3 +1,4 @@
+//tools : 
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -38,6 +39,7 @@ import {
 import { ModeToggle } from "@/components/mode-toggle";
 import Logo from "@/components/logo";
 import LanguageCurrencySelector from "@/components/language-currency-selector";
+import { Home } from "lucide-react";
 
 export default function ToolsPage() {
   const { language, translations, currency } = useLanguage();
@@ -337,42 +339,51 @@ export default function ToolsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="container flex h-16 items-center px-4">
-          <div className="flex items-center">
+      {/* Header */}
+      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10">
+        <div className="container flex h-16 items-center justify-between px-4">
+          <div className="flex items-center gap-4">
             <Logo />
-            <div className="ml-4 hidden md:block">
-              <Link href="/" className="flex items-center">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex items-center gap-2"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  <span>{t.backToHome}</span>
-                </Button>
-              </Link>
+            <div className="hidden md:block">
+              <h1 className="text-lg font-medium">{t.title}</h1>
             </div>
           </div>
-          <div className="ml-auto flex items-center space-x-4">
+
+          <div className="flex items-center gap-3">
+            <Link href="/" passHref>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                <span className="hidden md:inline">
+                  {language === "en" ? "Back to Dashboard" : "Quay lại Dashboard"}
+                </span>
+                <span className="inline md:hidden">
+                  <Home className="h-4 w-4" />
+                </span>
+              </Button>
+            </Link>
             <LanguageCurrencySelector />
             <ModeToggle />
           </div>
         </div>
       </header>
 
-      <main className="container px-4 py-6 md:py-10">
-        <div className="grid gap-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <div className="mb-6">
-              <h1 className="text-3xl font-bold">{t.title}</h1>
-              <p className="text-muted-foreground">{t.description}</p>
-            </div>
+      {/* Main Content */}
+      <main className="container mx-auto px-4 py-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-3xl font-bold">{t.title}</h2>
+          </div>
 
+          <div className="grid gap-6">
+            {/* Loan Calculator */}
             <Tabs
               value={activeTab}
               onValueChange={setActiveTab}
@@ -860,56 +871,53 @@ export default function ToolsPage() {
                 )}
               </TabsContent>
             </Tabs>
-          </motion.div>
+          </div>
+        </motion.div>
 
-          {/* Phần gợi ý thêm công cụ */}
-          <Card className="mt-8">
-            <CardHeader>
-              <CardTitle>{t.additionalTools.title}</CardTitle>
-              <CardDescription>{t.additionalTools.description}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 md:grid-cols-3">
-                <Link href="/tools/loan-schedule" className="block">
-                  <div className="flex flex-col items-center rounded-lg border p-4 text-center hover:border-primary hover:bg-primary/5 transition-colors">
-                    <Calendar className="mb-2 h-8 w-8 text-primary" />
-                    <h3 className="text-lg font-medium">
+        {/* Phần gợi ý thêm công cụ */}
+        <Card className="mt-8">
+          <CardHeader>
+            <CardTitle>{t.additionalTools.title}</CardTitle>
+            <CardDescription>{t.additionalTools.description}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2">
+              <Link href="/tools/loan-schedule">
+                <div className="flex items-center p-3 rounded-lg border hover:bg-accent transition-colors">
+                  <Calendar className="h-5 w-5 mr-3 text-primary" />
+                  <div>
+                    <h3 className="font-medium">
                       {t.additionalTools.loanSchedule}
                     </h3>
                     <p className="text-sm text-muted-foreground">
                       {t.additionalTools.loanScheduleDescription}
                     </p>
                   </div>
-                </Link>
-                <Link href="/tools/tax-calculator" className="block">
-                  <div className="flex flex-col items-center rounded-lg border p-4 text-center hover:border-primary hover:bg-primary/5 transition-colors">
-                    <Calculator className="mb-2 h-8 w-8 text-primary" />
-                    <h3 className="text-lg font-medium">
+                </div>
+              </Link>
+
+              <Link href="/tools/tax-calculator">
+                <div className="flex items-center p-3 rounded-lg border hover:bg-accent transition-colors">
+                  <Percent className="h-5 w-5 mr-3 text-primary" />
+                  <div>
+                    <h3 className="font-medium">
                       {t.additionalTools.taxCalculator}
                     </h3>
                     <p className="text-sm text-muted-foreground">
                       {t.additionalTools.taxCalculatorDescription}
                     </p>
                   </div>
-                </Link>
-                <div className="flex flex-col items-center rounded-lg border p-4 text-center">
-                  <CreditCard className="mb-2 h-8 w-8 text-primary" />
-                  <h3 className="text-lg font-medium">
-                    {t.additionalTools.creditCardComparison}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    {t.additionalTools.creditCardComparisonDescription}
-                  </p>
                 </div>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button variant="outline" className="w-full">
-                {t.additionalTools.suggestTool}
-              </Button>
-            </CardFooter>
-          </Card>
-        </div>
+              </Link>
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button variant="outline" className="w-full">
+              <span>{t.additionalTools.suggestTool}</span>
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </CardFooter>
+        </Card>
       </main>
     </div>
   );

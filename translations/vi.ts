@@ -1,3 +1,4 @@
+//vi.ts :
 export const vi = {
   appName: "CoinSight",
   common: {
@@ -168,10 +169,28 @@ export const vi = {
     highSpendingDay: "Ngày chi tiêu cao",
     noTransactions: "Không có giao dịch nào trong ngày này",
     transactionsTitle: "Giao dịch",
+    dayNames: {
+      Su: "CN",
+      Mo: "T2",
+      Tu: "T3",
+      We: "T4",
+      Th: "T5",
+      Fr: "T6",
+      Sa: "T7",
+    },
+    income: "Thu nhập",
+    expenses: "Chi tiêu",
+    incomeGreater: "Thu nhập > Chi tiêu",
+    expensesGreater: "Chi tiêu > Thu nhập",
+    transactions: "Giao dịch",
+    transactionDetails: "Chi tiết giao dịch",
+    viewTransactions: "Xem chi tiết giao dịch cho ngày đã chọn.",
   },
   aiInsights: {
     title: "Gợi ý từ AI",
     budgetUsage: "Sử dụng ngân sách",
+    noInsights:
+      "Chưa có gợi ý nào. Thêm nhiều giao dịch để nhận gợi ý cá nhân hóa.",
   },
   themeToggle: {
     toggleTheme: "Chuyển đổi giao diện",
@@ -257,7 +276,7 @@ export const vi = {
     description: "Xuất dữ liệu tài chính của bạn theo các định dạng khác nhau",
     csvButton: "Xuất dạng CSV",
     pdfButton: "Xuất dạng PDF",
-    dateRangeLabel: "Khoảng thời gian",
+    dateRangeLabel: "Khoảng thởi gian",
     startDateLabel: "Ngày bắt đầu",
     endDateLabel: "Ngày kết thúc",
     allDataLabel: "Tất cả dữ liệu",

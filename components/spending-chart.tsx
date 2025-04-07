@@ -1,3 +1,4 @@
+//spending-chart.tsx
 "use client";
 
 import { useMemo, useState, useEffect, useCallback } from "react";
@@ -44,7 +45,7 @@ import type { Transaction } from "@/types/transaction";
 import { formatCurrency, formatCompactNumber } from "@/lib/utils";
 import TransactionList from "./transaction-list";
 import { Button } from "@/components/ui/button";
-import { TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"; // Thêm import Tabs
 import {
   Select,
   SelectContent,
@@ -66,6 +67,7 @@ import { vi, enUS } from "date-fns/locale";
 import CategoryManager, { type Category } from "./category-manager";
 import EnhancedFinancialCalendar from "./enhanced-financial-calendar";
 import React from "react";
+import FinancialCalendar from "./financial-calendar";
 
 interface SpendingChartProps {
   transactions: Transaction[];
@@ -121,6 +123,11 @@ export default function SpendingChart({
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   const t = translations[language].spendingChart;
+
+  // Debug chartType
+  useEffect(() => {
+    console.log("Current chartType:", chartType);
+  }, [chartType]);
 
   // Di chuyển formatPeriodLabel vào đây
   const formatPeriodLabel = useCallback(
@@ -300,6 +307,18 @@ export default function SpendingChart({
     return category?.name || categoryId;
   };
 
+  // Custom formatter for Y-axis (convert to "Tỷ")
+  const formatYAxis = (value: number): string => {
+    if (value >= 1_000_000_000) {
+      return `${(value / 1_000_000_000).toFixed(0)} Tỷ`;
+    } else if (value >= 1_000_000) {
+      return `${(value / 1_000_000).toFixed(0)} Triệu`;
+    } else if (value >= 1_000) {
+      return `${(value / 1_000).toFixed(0)} Nghìn`;
+    }
+    return value.toString();
+  };
+
   // Custom tooltip for charts
   const CustomTooltip = React.memo(({ active, payload, label }: any) => {
     if (!active || !payload || payload.length === 0) return null;
@@ -308,9 +327,9 @@ export default function SpendingChart({
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="bg-background p-3 border rounded-md shadow-md"
+        className="bg-background p-4 border rounded-md shadow-lg"
       >
-        <p className="font-medium">{label}</p>
+        <p className="font-semibold text-lg">{label}</p>
         {payload.map((entry: any, index: number) => {
           const isExpense = entry.dataKey === "expenses";
           const isIncome = entry.dataKey === "income";
@@ -321,8 +340,8 @@ export default function SpendingChart({
             : entry.color;
 
           return (
-            <p key={`item-${index}`} className={color}>
-              {entry.name}:{" "}
+            <p key={`item-${index}`} className={`text-sm ${color}`}>
+              <span className="font-medium">{entry.name}:</span>{" "}
               {formatCurrency(entry.value, currency, exchangeRates, "VND")}
             </p>
           );
@@ -332,7 +351,7 @@ export default function SpendingChart({
   });
 
   // Custom active shape for pie chart
-  const renderActiveShape = React.memo((props: any) => {
+  const renderActiveShape = (props: any) => {
     const {
       cx,
       cy,
@@ -353,8 +372,7 @@ export default function SpendingChart({
           y={cy}
           dy={-20}
           textAnchor="middle"
-          fill="var(--foreground)"
-          className="text-sm font-medium"
+          className="text-sm font-medium text-foreground"
         >
           {payload.category}
         </text>
@@ -362,8 +380,7 @@ export default function SpendingChart({
           x={cx}
           y={cy}
           textAnchor="middle"
-          fill="var(--foreground)"
-          className="text-lg font-bold"
+          className="text-lg font-bold text-foreground"
         >
           {formatCurrency(value, currency, exchangeRates, "VND")}
         </text>
@@ -372,8 +389,7 @@ export default function SpendingChart({
           y={cy}
           dy={20}
           textAnchor="middle"
-          fill="var(--muted-foreground)"
-          className="text-xs"
+          className="text-xs text-muted-foreground"
         >
           {`${(percent * 100).toFixed(1)}%`}
         </text>
@@ -397,7 +413,7 @@ export default function SpendingChart({
         />
       </g>
     );
-  });
+  };
 
   // Handle pie chart hover
   const onPieEnter = useCallback((_: any, index: number) => {
@@ -640,41 +656,22 @@ export default function SpendingChart({
             </div>
 
             <div className="flex items-center gap-2">
-              <TabsList className="h-8">
-                <TabsTrigger
-                  value="line"
-                  onClick={() => setChartType("line")}
-                  className={
-                    chartType === "line"
-                      ? "bg-primary text-primary-foreground"
-                      : ""
-                  }
-                >
-                  <LineChartIcon className="h-3.5 w-3.5" />
-                </TabsTrigger>
-                <TabsTrigger
-                  value="bar"
-                  onClick={() => setChartType("bar")}
-                  className={
-                    chartType === "bar"
-                      ? "bg-primary text-primary-foreground"
-                      : ""
-                  }
-                >
-                  <BarChart3 className="h-3.5 w-3.5" />
-                </TabsTrigger>
-                <TabsTrigger
-                  value="pie"
-                  onClick={() => setChartType("pie")}
-                  className={
-                    chartType === "pie"
-                      ? "bg-primary text-primary-foreground"
-                      : ""
-                  }
-                >
-                  <PieChartIcon className="h-3.5 w-3.5" />
-                </TabsTrigger>
-              </TabsList>
+              <Tabs
+                value={chartType}
+                onValueChange={(value) => setChartType(value as ChartType)}
+              >
+                <TabsList className="h-8">
+                  <TabsTrigger value="line">
+                    <LineChartIcon className="h-3.5 w-3.5" />
+                  </TabsTrigger>
+                  <TabsTrigger value="bar">
+                    <BarChart3 className="h-3.5 w-3.5" />
+                  </TabsTrigger>
+                  <TabsTrigger value="pie">
+                    <PieChartIcon className="h-3.5 w-3.5" />
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
 
               <CategoryManager
                 categories={categories}
@@ -772,6 +769,7 @@ export default function SpendingChart({
                       width="100%"
                       height="100%"
                       aria-label={t.ariaLabel}
+                      className="chart-container"
                     >
                       <LineChart
                         data={chartData}
@@ -779,14 +777,14 @@ export default function SpendingChart({
                       >
                         <CartesianGrid
                           strokeDasharray="3 3"
-                          stroke="var(--border)"
+                          stroke="hsl(var(--border))"
                         />
                         <XAxis
                           dataKey={
                             groupBy === "category" ? "category" : "period"
                           }
-                          stroke="var(--foreground)"
-                          tick={{ fill: "var(--foreground)" }}
+                          stroke="hsl(var(--foreground))"
+                          tick={{ fill: "hsl(var(--foreground))" }}
                           tickFormatter={(value) => {
                             if (groupBy === "category") {
                               return (
@@ -800,11 +798,9 @@ export default function SpendingChart({
                           }}
                         />
                         <YAxis
-                          stroke="var(--foreground)"
-                          tick={{ fill: "var(--foreground)" }}
-                          tickFormatter={(value) => {
-                            return formatCompactNumber(value, language);
-                          }}
+                          stroke="hsl(var(--foreground))"
+                          tick={{ fill: "hsl(var(--foreground))" }}
+                          tickFormatter={formatYAxis}
                         />
                         <Tooltip content={<CustomTooltip />} />
                         <Legend />
@@ -813,20 +809,22 @@ export default function SpendingChart({
                             type="monotone"
                             dataKey="income"
                             stroke="hsl(var(--primary))"
-                            strokeWidth={2}
-                            dot={{ r: 4 }}
-                            activeDot={{ r: 6 }}
+                            strokeWidth={3}
+                            dot={{ r: 5, fill: "hsl(var(--primary))" }}
+                            activeDot={{ r: 8, fill: "hsl(var(--primary))" }}
                             name={t.income}
+                            className="income-line"
                           />
                         )}
                         <Line
                           type="monotone"
                           dataKey="expenses"
                           stroke="hsl(var(--destructive))"
-                          strokeWidth={2}
-                          dot={{ r: 4 }}
-                          activeDot={{ r: 6 }}
+                          strokeWidth={3}
+                          dot={{ r: 5, fill: "hsl(var(--destructive))" }}
+                          activeDot={{ r: 8, fill: "hsl(var(--destructive))" }}
                           name={t.expenses}
+                          className="expenses-line"
                         />
                       </LineChart>
                     </ResponsiveContainer>
@@ -837,57 +835,68 @@ export default function SpendingChart({
                       width="100%"
                       height="100%"
                       aria-label={t.ariaLabel}
+                      className="chart-container"
                     >
-                      <BarChart
-                        data={chartData}
-                        margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-                      >
-                        <CartesianGrid
-                          strokeDasharray="3 3"
-                          stroke="var(--border)"
-                        />
-                        <XAxis
-                          dataKey={
-                            groupBy === "category" ? "category" : "period"
-                          }
-                          stroke="var(--foreground)"
-                          tick={{ fill: "var(--foreground)" }}
-                          tickFormatter={(value) => {
-                            if (groupBy === "category") {
-                              return (
-                                getCategoryName(value).substring(0, 10) +
-                                (getCategoryName(value).length > 10
-                                  ? "..."
-                                  : "")
-                              );
-                            }
-                            return value;
-                          }}
-                        />
-                        <YAxis
-                          stroke="var(--foreground)"
-                          tick={{ fill: "var(--foreground)" }}
-                          tickFormatter={(value) => {
-                            return formatCompactNumber(value, language);
-                          }}
-                        />
-                        <Tooltip content={<CustomTooltip />} />
-                        <Legend />
-                        {groupBy !== "category" && (
-                          <Bar
-                            dataKey="income"
-                            fill="hsl(var(--primary))"
-                            name={t.income}
-                            radius={[4, 4, 0, 0]}
+                      {chartData.some(
+                        (item) => item.income > 0 || item.expenses > 0
+                      ) ? (
+                        <BarChart
+                          data={chartData}
+                          margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                        >
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            stroke="hsl(var(--border))"
                           />
-                        )}
-                        <Bar
-                          dataKey="expenses"
-                          fill="hsl(var(--destructive))"
-                          name={t.expenses}
-                          radius={[4, 4, 0, 0]}
-                        />
-                      </BarChart>
+                          <XAxis
+                            dataKey={
+                              groupBy === "category" ? "category" : "period"
+                            }
+                            stroke="hsl(var(--foreground))"
+                            tick={{ fill: "hsl(var(--foreground))" }}
+                            tickFormatter={(value) => {
+                              if (groupBy === "category") {
+                                return (
+                                  getCategoryName(value).substring(0, 10) +
+                                  (getCategoryName(value).length > 10
+                                    ? "..."
+                                    : "")
+                                );
+                              }
+                              return value;
+                            }}
+                          />
+                          <YAxis
+                            stroke="hsl(var(--foreground))"
+                            tick={{ fill: "hsl(var(--foreground))" }}
+                            tickFormatter={formatYAxis}
+                          />
+                          <Tooltip content={<CustomTooltip />} />
+                          <Legend />
+                          {groupBy !== "category" && (
+                            <Bar
+                              dataKey="income"
+                              fill="hsl(var(--primary))"
+                              name={t.income}
+                              radius={[4, 4, 0, 0]}
+                              className="income-bar"
+                            />
+                          )}
+                          <Bar
+                            dataKey="expenses"
+                            fill="hsl(var(--destructive))"
+                            name={t.expenses}
+                            radius={[4, 4, 0, 0]}
+                            className="expenses-bar"
+                          />
+                        </BarChart>
+                      ) : (
+                        <div className="flex items-center justify-center h-full">
+                          <p className="text-muted-foreground">
+                            No data available for Bar Chart
+                          </p>
+                        </div>
+                      )}
                     </ResponsiveContainer>
                   )}
 
@@ -896,50 +905,81 @@ export default function SpendingChart({
                       width="100%"
                       height="100%"
                       aria-label={t.ariaLabel}
+                      className="chart-container"
                     >
-                      <PieChart>
-                        <Pie
-                          activeIndex={activeIndex}
-                          activeShape={renderActiveShape}
-                          data={
-                            groupBy === "category"
-                              ? chartData.map((item) => ({
-                                  ...item,
-                                  name: getCategoryName(item.category),
-                                  value: item.expenses,
-                                }))
-                              : chartData.map((item) => ({
-                                  ...item,
-                                  name: item.period,
-                                  value: item.expenses,
-                                }))
-                          }
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={60}
-                          outerRadius={80}
-                          fill="#8884d8"
-                          dataKey="value"
-                          nameKey={groupBy === "category" ? "name" : "period"}
-                          onMouseEnter={onPieEnter}
-                          label={({ name, percent }) =>
-                            `${name}: ${(percent * 100).toFixed(0)}%`
-                          }
-                          labelLine={false}
-                        >
-                          {chartData.map((entry, index) => (
-                            <Cell
-                              key={`cell-${index}`}
-                              fill={
-                                groupBy === "category"
-                                  ? getCategoryColor(entry.category)
-                                  : `hsl(${index * 30}, 70%, 50%)`
-                              }
-                            />
-                          ))}
-                        </Pie>
-                        <Tooltip content={<CustomTooltip />} />
-                      </PieChart>
+                      {chartData.some((item) => item.expenses > 0) ? (
+                        <PieChart>
+                          <Pie
+                            activeIndex={activeIndex}
+                            activeShape={renderActiveShape}
+                            data={
+                              groupBy === "category"
+                                ? chartData.map((item) => ({
+                                    ...item,
+                                    name:
+                                      "category" in item
+                                        ? getCategoryName(item.category)
+                                        : "",
+                                    value: item.expenses,
+                                  }))
+                                : chartData.map((item) => ({
+                                    ...item,
+                                    name: "period" in item ? item.period : "",
+                                    value: item.expenses,
+                                  }))
+                            }
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={70}
+                            outerRadius={90}
+                            fill="url(#gradient)"
+                            dataKey="value"
+                            nameKey={groupBy === "category" ? "name" : "period"}
+                            onMouseEnter={onPieEnter}
+                            label={({ name, percent }) =>
+                              `${name}: ${(percent * 100).toFixed(1)}%`
+                            }
+                            labelLine={false}
+                            paddingAngle={5} // Tăng khoảng cách giữa các phần
+                          >
+                            {/* Gradient màu sắc */}
+                            <defs>
+                              <linearGradient
+                                id="gradient"
+                                x1="0"
+                                y1="0"
+                                x2="1"
+                                y2="1"
+                              >
+                                <stop offset="0%" stopColor="#4caf50" />
+                                <stop offset="100%" stopColor="#81c784" />
+                              </linearGradient>
+                            </defs>
+
+                            {chartData.map((entry, index) => (
+                              <Cell
+                                key={`cell-${index}`}
+                                fill={
+                                  groupBy === "category"
+                                    ? "category" in entry
+                                      ? getCategoryColor(entry.category)
+                                      : "#64748b" // Default color for entries without category
+                                    : `hsl(${index * 30}, 70%, 50%)`
+                                }
+                                stroke="#fff" // Đường viền trắng
+                                strokeWidth={2} // Độ dày đường viền
+                              />
+                            ))}
+                          </Pie>
+                          <Tooltip content={<CustomTooltip />} />
+                        </PieChart>
+                      ) : (
+                        <div className="flex items-center justify-center h-full">
+                          <p className="text-muted-foreground">
+                            No expenses data available for Pie Chart
+                          </p>
+                        </div>
+                      )}
                     </ResponsiveContainer>
                   )}
                 </motion.div>

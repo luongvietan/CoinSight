@@ -22,7 +22,7 @@ const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
 const auth = getAuth(app);
 
 // Tạo Firestore với cấu hình nâng cao để khắc phục lỗi ERR_QUIC_PROTOCOL_ERROR
-// const db = getFirestore(app);
+// Removed duplicate declaration of db
 
 // Buộc sử dụng long polling thay vì WebChannel/QUIC để tránh lỗi kết nối
 const db = initializeFirestore(app, {

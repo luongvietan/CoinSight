@@ -35,61 +35,44 @@ export default function AiInsights({
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [budgetsLoading, setBudgetsLoading] = useState(false);
   const { language, translations } = useLanguage();
-  const t = translations[language].dashboard;
+  const dashboard = translations[language]?.dashboard;
+  const t: { aiInsights?: { title?: string } } =
+    typeof dashboard === "object" &&
+    !Array.isArray(dashboard) &&
+    dashboard !== null &&
+    "aiInsights" in dashboard &&
+    typeof dashboard.aiInsights === "object"
+      ? { aiInsights: dashboard.aiInsights }
+      : {};
 
   useEffect(() => {
-    if (transactions.length > 0 && !isLoading) {
+    if (transactions?.length > 0 && !isLoading) {
       setAiLoading(true);
       setBudgetsLoading(true);
 
-      // Get budgets
+      // Fetch budgets and calculate spending
       fetchBudgets()
         .then((budgetsData) => {
+          if (!budgetsData) throw new Error("No budgets data found");
           setBudgets(budgetsData);
 
-          // Calculate category spending
-          const categories: Record<string, number> = {};
-          const totalSpending = transactions
-            .filter((t) => t.amount < 0)
-            .reduce((sum, t) => sum + Math.abs(t.amount), 0);
-
-          transactions
-            .filter((t) => t.amount < 0)
-            .forEach((t) => {
-              categories[t.category] =
-                (categories[t.category] || 0) + Math.abs(t.amount);
-            });
-
-          // Map spending data with budget data
-          const categoryData = Object.entries(categories)
-            .map(([category, amount]) => {
-              const budgetForCategory = budgetsData.find(
-                (b) => b.category === category
-              );
-              return {
-                category,
-                amount,
-                percentage: Math.round((amount / totalSpending) * 100),
-                budget: budgetForCategory
-                  ? Math.round((amount / budgetForCategory.amount) * 100)
-                  : 0,
-                budgetAmount: budgetForCategory ? budgetForCategory.amount : 0,
-              };
-            })
-            .filter((item) => item.budgetAmount > 0); // Only show categories that have budgets
-
+          const categoryData = calculateCategorySpending(
+            transactions,
+            budgetsData
+          );
           setCategorySpending(categoryData);
-          setBudgetsLoading(false);
         })
         .catch((error) => {
           console.error("Error getting budgets:", error);
+        })
+        .finally(() => {
           setBudgetsLoading(false);
         });
 
-      // Get AI insights
+      // Fetch AI insights
       getAiInsights(transactions)
         .then((data) => {
-          setInsights(data.insights);
+          setInsights(data?.insights || []);
         })
         .catch((error) => {
           console.error("Error getting AI insights:", error);
@@ -104,6 +87,40 @@ export default function AiInsights({
         });
     }
   }, [transactions, isLoading]);
+
+  const calculateCategorySpending = (
+    transactions: Transaction[],
+    budgetsData: Budget[]
+  ): CategorySpending[] => {
+    const categories: Record<string, number> = {};
+    const totalSpending = transactions
+      .filter((t) => t.amount < 0)
+      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
+    transactions
+      .filter((t) => t.amount < 0)
+      .forEach((t) => {
+        categories[t.category] =
+          (categories[t.category] || 0) + Math.abs(t.amount);
+      });
+
+    return Object.entries(categories)
+      .map(([category, amount]) => {
+        const budgetForCategory = budgetsData.find(
+          (b) => b.category === category
+        );
+        return {
+          category,
+          amount,
+          percentage: Math.round((amount / totalSpending) * 100),
+          budget: budgetForCategory
+            ? Math.round((amount / budgetForCategory.amount) * 100)
+            : 0,
+          budgetAmount: budgetForCategory ? budgetForCategory.amount : 0,
+        };
+      })
+      .filter((item) => item.budgetAmount > 0); // Only show categories that have budgets
+  };
 
   if (isLoading) {
     return (
@@ -120,7 +137,11 @@ export default function AiInsights({
       <div className="bg-primary/10 rounded-lg p-4 border border-primary/20">
         <div className="flex items-center gap-2 mb-3">
           <Sparkles className="h-5 w-5 text-primary" />
-          <h3 className="font-medium">{t.aiInsights.title}</h3>
+          <h3 className="font-medium">
+            {typeof t.aiInsights === "object" && t.aiInsights?.title
+              ? t.aiInsights.title
+              : "AI Insights"}
+          </h3>
         </div>
 
         {aiLoading ? (

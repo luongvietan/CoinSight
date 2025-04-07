@@ -1,3 +1,4 @@
+//en.ts :
 export const en = {
   appName: "CoinSight",
   common: {
@@ -44,6 +45,7 @@ export const en = {
     goals: "Goals",
     tools: "Tools",
     spendingTrends: "Spending Trends",
+    allTransactions: "All Transactions",
     recentTransactions: "Recent Transactions",
     budgetTracking: "Budget Tracking",
     aiInsights: "AI Insights",
@@ -165,10 +167,28 @@ export const en = {
     highSpendingDay: "High spending day",
     noTransactions: "No transactions on this day",
     transactionsTitle: "Transactions",
+    dayNames: {
+      Su: "Su",
+      Mo: "Mo",
+      Tu: "Tu",
+      We: "We",
+      Th: "Th",
+      Fr: "Fr",
+      Sa: "Sa",
+    },
+    income: "Income",
+    expenses: "Expenses",
+    incomeGreater: "Income > Expenses",
+    expensesGreater: "Expenses > Income",
+    transactions: "Transactions",
+    transactionDetails: "Transaction Details",
+    viewTransactions: "View transaction details for the selected date.",
   },
   aiInsights: {
     title: "AI Suggestions",
     budgetUsage: "Budget Usage",
+    noInsights:
+      "No insights available. Add more transactions to get personalized insights.",
   },
   themeToggle: {
     toggleTheme: "Toggle theme",

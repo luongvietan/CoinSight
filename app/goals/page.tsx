@@ -1,3 +1,4 @@
+//goal:
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -313,7 +314,7 @@ export default function GoalsPage() {
       </main>
 
       <footer className="border-t py-6 text-center text-sm text-muted-foreground">
-        © 2024 CoinSight -{" "}
+        © 2025 CoinSight -{" "}
         {language === "vi"
           ? "Quản lý tài chính bằng AI"
           : "AI-Powered Finance Management"}

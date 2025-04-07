@@ -1,3 +1,4 @@
+//profile :
 "use client";
 
 import { useState, useEffect } from "react";
@@ -6,6 +7,7 @@ import { motion } from "framer-motion";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import Link from "next/link";
 import {
   User,
   Upload,
@@ -16,6 +18,7 @@ import {
   Target,
   CreditCard,
   ChevronLeft,
+  Home,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -45,6 +48,7 @@ import {
   getUserTransactions,
   getUser,
 } from "@/lib/firebase/firestore";
+import { Timestamp } from "firebase/firestore";
 import { uploadFile, deleteFile } from "@/lib/firebase/storage";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
@@ -54,6 +58,9 @@ import { format } from "date-fns";
 import { fetchBudgets, getGoals } from "@/lib/api";
 import type { Budget } from "@/types/budget";
 import type { Goal } from "@/types/goal";
+import Logo from "@/components/logo";
+import LanguageCurrencySelector from "@/components/language-currency-selector";
+import { ModeToggle } from "@/components/mode-toggle";
 
 const formSchema = z.object({
   displayName: z.string().min(2, {
@@ -121,7 +128,21 @@ export default function ProfilePage() {
 
           // Handle transactions
           if (Array.isArray(userTransactions)) {
-            setTransactions(userTransactions);
+            // Map Firebase transactions to our app's Transaction type
+            // ensuring that id is always a string (not undefined)
+            const mappedTransactions: Transaction[] = userTransactions.map(
+              (transaction) => ({
+                id: transaction.id || "", // Ensure id is a string
+                description: transaction.description,
+                amount: transaction.amount,
+                category: transaction.category,
+                date:
+                  transaction.date instanceof Timestamp
+                    ? transaction.date.toDate().toISOString().split("T")[0]
+                    : String(transaction.date),
+              })
+            );
+            setTransactions(mappedTransactions);
           } else {
             setTransactions([]);
             console.warn("Không lấy được dữ liệu giao dịch");
@@ -282,237 +303,270 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="container max-w-6xl py-6 space-y-8">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-1"
-              onClick={() => router.push("/")}
-            >
-              <ChevronLeft className="h-4 w-4" />
-              {language === "en" ? "Back to Home" : "Quay về trang chủ"}
-            </Button>
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10">
+        <div className="container flex h-16 items-center justify-between px-4">
+          <div className="flex items-center gap-4">
+            <Logo />
+            <div className="hidden md:block">
+              <h1 className="text-lg font-medium">{t.title}</h1>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Link href="/" passHref>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                <span className="hidden md:inline">
+                  {language === "en"
+                    ? "Back to Dashboard"
+                    : "Quay lại Dashboard"}
+                </span>
+                <span className="inline md:hidden">
+                  <Home className="h-4 w-4" />
+                </span>
+              </Button>
+            </Link>
+            <LanguageCurrencySelector />
+            <ModeToggle />
           </div>
         </div>
-        <h1 className="text-3xl font-bold tracking-tight mt-4">{t.title}</h1>
-        <Separator className="my-4" />
-      </motion.div>
+      </header>
 
-      <div className="grid md:grid-cols-3 gap-8">
-        <div className="md:col-span-2">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-          >
-            <Card>
-              <CardHeader>
-                <CardTitle>{t.personalInfo}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Form {...form}>
-                  <form
-                    onSubmit={form.handleSubmit(onSubmit)}
-                    className="space-y-6"
-                  >
-                    <div className="flex flex-col sm:flex-row gap-6 items-start">
-                      <div className="flex flex-col items-center space-y-3">
-                        <Avatar className="h-24 w-24">
-                          {photoPreview ? (
-                            <AvatarImage
-                              src={photoPreview}
-                              alt={user?.displayName || ""}
+      <main className="container mx-auto px-4 py-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-3xl font-bold">{t.title}</h2>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="md:col-span-2">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+              >
+                <Card>
+                  <CardHeader>
+                    <CardTitle>{t.personalInfo}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Form {...form}>
+                      <form
+                        onSubmit={form.handleSubmit(onSubmit)}
+                        className="space-y-6"
+                      >
+                        <div className="flex flex-col sm:flex-row gap-6 items-start">
+                          <div className="flex flex-col items-center space-y-3">
+                            <Avatar className="h-24 w-24">
+                              {photoPreview ? (
+                                <AvatarImage
+                                  src={photoPreview}
+                                  alt={user?.displayName || ""}
+                                />
+                              ) : (
+                                <AvatarImage
+                                  src={
+                                    user?.photoURL ||
+                                    "/placeholder.svg?height=96&width=96"
+                                  }
+                                  alt={user?.displayName || ""}
+                                />
+                              )}
+                              <AvatarFallback className="text-2xl">
+                                {user?.displayName?.charAt(0) || "U"}
+                              </AvatarFallback>
+                            </Avatar>
+
+                            <div className="flex gap-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="flex gap-1 text-xs"
+                                onClick={() =>
+                                  document
+                                    .getElementById("photo-upload")
+                                    ?.click()
+                                }
+                              >
+                                <Upload className="h-3 w-3" />
+                                <span>{t.changePhoto}</span>
+                              </Button>
+
+                              {(user?.photoURL || photoPreview) && (
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  className="flex gap-1 text-xs"
+                                  onClick={handleRemovePhoto}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              )}
+                            </div>
+
+                            <Input
+                              id="photo-upload"
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={handlePhotoChange}
                             />
-                          ) : (
-                            <AvatarImage
-                              src={
-                                user?.photoURL ||
-                                "/placeholder.svg?height=96&width=96"
-                              }
-                              alt={user?.displayName || ""}
+
+                            <p className="text-xs text-muted-foreground">
+                              {t.uploadHint}
+                            </p>
+                          </div>
+
+                          <div className="flex-1 space-y-4">
+                            <FormField
+                              control={form.control}
+                              name="displayName"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>{t.name}</FormLabel>
+                                  <FormControl>
+                                    <Input {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
                             />
-                          )}
-                          <AvatarFallback className="text-2xl">
-                            {user?.displayName?.charAt(0) || "U"}
-                          </AvatarFallback>
-                        </Avatar>
 
-                        <div className="flex gap-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="flex gap-1 text-xs"
-                            onClick={() =>
-                              document.getElementById("photo-upload")?.click()
-                            }
-                          >
-                            <Upload className="h-3 w-3" />
-                            <span>{t.changePhoto}</span>
-                          </Button>
-
-                          {(user?.photoURL || photoPreview) && (
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              className="flex gap-1 text-xs"
-                              onClick={handleRemovePhoto}
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          )}
+                            <FormField
+                              control={form.control}
+                              name="email"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>{t.email}</FormLabel>
+                                  <FormControl>
+                                    <Input {...field} disabled />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
                         </div>
 
-                        <Input
-                          id="photo-upload"
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={handlePhotoChange}
-                        />
+                        <Button
+                          type="submit"
+                          disabled={isUpdating}
+                          className="ml-auto"
+                        >
+                          {isUpdating && (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          )}
+                          {t.updateProfile}
+                        </Button>
+                      </form>
+                    </Form>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </div>
 
-                        <p className="text-xs text-muted-foreground">
-                          {t.uploadHint}
-                        </p>
+            <div>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+              >
+                <Card>
+                  <CardHeader>
+                    <CardTitle>{t.statistics}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="space-y-2">
+                      <div className="flex items-center">
+                        <CreditCard className="h-5 w-5 mr-2 text-primary" />
+                        <span className="text-sm font-medium">
+                          {t.transactionsCount}
+                        </span>
                       </div>
-
-                      <div className="flex-1 space-y-4">
-                        <FormField
-                          control={form.control}
-                          name="displayName"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>{t.name}</FormLabel>
-                              <FormControl>
-                                <Input {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">
+                          {isLoading ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            transactions.length
                           )}
-                        />
-
-                        <FormField
-                          control={form.control}
-                          name="email"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>{t.email}</FormLabel>
-                              <FormControl>
-                                <Input {...field} disabled />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                        </span>
                       </div>
                     </div>
 
-                    <Button
-                      type="submit"
-                      disabled={isUpdating}
-                      className="ml-auto"
-                    >
-                      {isUpdating && (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      )}
-                      {t.updateProfile}
-                    </Button>
-                  </form>
-                </Form>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center">
+                        <BarChart3 className="h-5 w-5 mr-2 text-primary" />
+                        <span className="text-sm font-medium">
+                          {t.budgetsCount}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">
+                          {isLoading ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            budgets.length
+                          )}
+                        </span>
+                      </div>
+                    </div>
 
-        <div>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            <Card>
-              <CardHeader>
-                <CardTitle>{t.statistics}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-2">
-                  <div className="flex items-center">
-                    <CreditCard className="h-5 w-5 mr-2 text-primary" />
-                    <span className="text-sm font-medium">
-                      {t.transactionsCount}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">
-                      {isLoading ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        transactions.length
-                      )}
-                    </span>
-                  </div>
-                </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center">
+                        <Target className="h-5 w-5 mr-2 text-primary" />
+                        <span className="text-sm font-medium">
+                          {t.goalsCount}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">
+                          {isLoading ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            goals.length
+                          )}
+                        </span>
+                      </div>
+                    </div>
 
-                <div className="space-y-2">
-                  <div className="flex items-center">
-                    <BarChart3 className="h-5 w-5 mr-2 text-primary" />
-                    <span className="text-sm font-medium">
-                      {t.budgetsCount}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">
-                      {isLoading ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        budgets.length
-                      )}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center">
-                    <Target className="h-5 w-5 mr-2 text-primary" />
-                    <span className="text-sm font-medium">{t.goalsCount}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">
-                      {isLoading ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        goals.length
-                      )}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center">
-                    <Calendar className="h-5 w-5 mr-2 text-primary" />
-                    <span className="text-sm font-medium">{t.joinedOn}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">
-                      {user?.metadata?.creationTime
-                        ? format(new Date(user.metadata.creationTime), "PPP")
-                        : "-"}
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
-      </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center">
+                        <Calendar className="h-5 w-5 mr-2 text-primary" />
+                        <span className="text-sm font-medium">
+                          {t.joinedOn}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">
+                          {user?.metadata?.creationTime
+                            ? format(
+                                new Date(user.metadata.creationTime),
+                                "PPP"
+                              )
+                            : "-"}
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </div>
+          </div>
+        </motion.div>
+      </main>
     </div>
   );
 }

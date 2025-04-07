@@ -55,7 +55,7 @@ body {
     --card-foreground: 0 0% 98%;
     --popover: 0 0% 3.9%;
     --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
+    --primary: 142 86% 48%; /* Màu xanh lá cho Thu nhập trong theme tối */
     --primary-foreground: 0 0% 9%;
     --secondary: 0 0% 14.9%;
     --secondary-foreground: 0 0% 98%;
@@ -90,5 +90,41 @@ body {
   }
   body {
     @apply bg-background text-foreground;
+  }
+
+  /* Ghi đè màu cho các thành phần SVG của recharts */
+  .chart-container .recharts-cartesian-axis-tick text {
+    fill: hsl(var(--foreground)) !important;
+  }
+
+  .chart-container .recharts-cartesian-axis-line {
+    stroke: hsl(var(--foreground)) !important;
+  }
+
+  .chart-container .recharts-legend-item text {
+    fill: hsl(var(--foreground)) !important;
+  }
+
+  /* Đảm bảo màu của lưới (grid) thay đổi theo theme */
+  .chart-container .recharts-cartesian-grid line {
+    stroke: hsl(var(--border)) !important;
+  }
+
+  /* Đảm bảo màu của đường "Thu nhập" và "Chi tiêu" trong LineChart */
+  .chart-container .income-line {
+    stroke: hsl(var(--primary)) !important;
+  }
+
+  .chart-container .expenses-line {
+    stroke: hsl(var(--destructive)) !important;
+  }
+
+  /* Đảm bảo màu của cột "Thu nhập" và "Chi tiêu" trong BarChart */
+  .chart-container .income-bar {
+    fill: hsl(var(--primary)) !important;
+  }
+
+  .chart-container .expenses-bar {
+    fill: hsl(var(--destructive)) !important;
   }
 }

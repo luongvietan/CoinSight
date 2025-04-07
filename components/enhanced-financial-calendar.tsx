@@ -1,3 +1,4 @@
+//enhance-financial-calendar.tsx :
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
@@ -44,6 +45,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import React from "react";
 
 // Tối ưu hiệu suất bằng việc tách component con
+interface DayCellProps {
+  day: Date;
+  isCurrentMonth: boolean;
+  isHighSpending: boolean;
+  isIncomeDay: boolean;
+  isTransactionDay: boolean;
+  isProfitDay: boolean;
+  isLossDay: boolean;
+  isSelected: boolean;
+  onClick: (date: Date) => void;
+}
+
 const DayCell = React.memo(
   ({
     day,
@@ -51,9 +64,11 @@ const DayCell = React.memo(
     isHighSpending,
     isIncomeDay,
     isTransactionDay,
+    isProfitDay,
+    isLossDay,
     isSelected,
     onClick,
-  }) => {
+  }: DayCellProps) => {
     const dayClass = useMemo(() => {
       let baseClass =
         "flex items-center justify-center h-10 w-10 rounded-full relative cursor-pointer transition-colors";
@@ -68,6 +83,10 @@ const DayCell = React.memo(
 
       if (isSelected) {
         baseClass += " bg-primary text-primary-foreground";
+      } else if (isProfitDay) {
+        baseClass += " bg-green-500/80 text-white hover:bg-green-500";
+      } else if (isLossDay) {
+        baseClass += " bg-red-500/80 text-white hover:bg-red-500";
       } else if (isHighSpending) {
         baseClass += " hover:bg-destructive/20";
       } else if (isIncomeDay) {
@@ -83,21 +102,27 @@ const DayCell = React.memo(
       isHighSpending,
       isIncomeDay,
       isTransactionDay,
+      isProfitDay,
+      isLossDay,
       isSelected,
     ]);
 
     return (
       <div className={dayClass} onClick={() => onClick(day)}>
         {format(day, "d")}
-        {isHighSpending && (
+        {isHighSpending && !isProfitDay && !isLossDay && (
           <span className="absolute bottom-0 right-0 h-2 w-2 bg-destructive rounded-full" />
         )}
-        {isIncomeDay && (
+        {isIncomeDay && !isProfitDay && !isLossDay && (
           <span className="absolute bottom-0 left-0 h-2 w-2 bg-primary rounded-full" />
         )}
-        {isTransactionDay && !isHighSpending && !isIncomeDay && (
-          <span className="absolute bottom-0 left-0 h-2 w-2 bg-accent-foreground rounded-full" />
-        )}
+        {isTransactionDay &&
+          !isHighSpending &&
+          !isIncomeDay &&
+          !isProfitDay &&
+          !isLossDay && (
+            <span className="absolute bottom-0 left-0 h-2 w-2 bg-accent-foreground rounded-full" />
+          )}
       </div>
     );
   }
@@ -187,6 +212,18 @@ export default function EnhancedFinancialCalendar({
       .map((day) => day.date);
   }, [dailyData]);
 
+  const profitDays = useMemo(() => {
+    return Array.from(dailyData.values())
+      .filter((day) => day.income > day.expenses && day.transactions.length > 0)
+      .map((day) => day.date);
+  }, [dailyData]);
+
+  const lossDays = useMemo(() => {
+    return Array.from(dailyData.values())
+      .filter((day) => day.expenses > day.income && day.transactions.length > 0)
+      .map((day) => day.date);
+  }, [dailyData]);
+
   const transactionDays = useMemo(() => {
     return Array.from(dailyData.values())
       .filter((day) => {
@@ -194,10 +231,18 @@ export default function EnhancedFinancialCalendar({
           isSameDay(d, day.date)
         );
         const isIncomeDay = incomeDays.some((d) => isSameDay(d, day.date));
-        return !isHighSpending && !isIncomeDay && day.transactions.length > 0;
+        const isProfitDay = profitDays.some((d) => isSameDay(d, day.date));
+        const isLossDay = lossDays.some((d) => isSameDay(d, day.date));
+        return (
+          !isHighSpending &&
+          !isIncomeDay &&
+          !isProfitDay &&
+          !isLossDay &&
+          day.transactions.length > 0
+        );
       })
       .map((day) => day.date);
-  }, [dailyData, highSpendingDays, incomeDays]);
+  }, [dailyData, highSpendingDays, incomeDays, profitDays, lossDays]);
 
   const selectedDateData = useMemo(() => {
     if (!selectedDate) return null;
@@ -225,7 +270,7 @@ export default function EnhancedFinancialCalendar({
       onSelectDate(date);
       setIsDialogOpen(true);
     },
-    [onSelectDate]
+    [onSelectDate, setIsDialogOpen]
   );
 
   const navigateMonth = useCallback((direction: "prev" | "next") => {
@@ -251,7 +296,7 @@ export default function EnhancedFinancialCalendar({
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg flex items-center gap-2">
             <CalendarIcon className="h-5 w-5 text-muted-foreground" />
-            {t.title}
+            {translations[language].dashboard.financialCalendar}
           </CardTitle>
           <Tabs
             value={calendarView}
@@ -260,10 +305,10 @@ export default function EnhancedFinancialCalendar({
           >
             <TabsList className="h-8">
               <TabsTrigger value="month" className="px-3 text-xs">
-                Month
+                {language === "vi" ? "Tháng" : "Month"}
               </TabsTrigger>
               <TabsTrigger value="year" className="px-3 text-xs">
-                Year
+                {language === "vi" ? "Năm" : "Year"}
               </TabsTrigger>
             </TabsList>
           </Tabs>
@@ -333,10 +378,14 @@ export default function EnhancedFinancialCalendar({
                       isSameDay(d, day)
                     )}
                     isIncomeDay={incomeDays.some((d) => isSameDay(d, day))}
+                    isProfitDay={profitDays.some((d) => isSameDay(d, day))}
+                    isLossDay={lossDays.some((d) => isSameDay(d, day))}
                     isTransactionDay={transactionDays.some((d) =>
                       isSameDay(d, day)
                     )}
-                    isSelected={selectedDate && isSameDay(selectedDate, day)}
+                    isSelected={
+                      selectedDate !== null && isSameDay(selectedDate, day)
+                    }
                     onClick={handleDateClick}
                   />
                 );
@@ -352,10 +401,14 @@ export default function EnhancedFinancialCalendar({
                     isSameDay(d, day)
                   )}
                   isIncomeDay={incomeDays.some((d) => isSameDay(d, day))}
+                  isProfitDay={profitDays.some((d) => isSameDay(d, day))}
+                  isLossDay={lossDays.some((d) => isSameDay(d, day))}
                   isTransactionDay={transactionDays.some((d) =>
                     isSameDay(d, day)
                   )}
-                  isSelected={selectedDate && isSameDay(selectedDate, day)}
+                  isSelected={
+                    selectedDate !== null && isSameDay(selectedDate, day)
+                  }
                   onClick={handleDateClick}
                 />
               ))}
@@ -385,10 +438,14 @@ export default function EnhancedFinancialCalendar({
                       isSameDay(d, day)
                     )}
                     isIncomeDay={incomeDays.some((d) => isSameDay(d, day))}
+                    isProfitDay={profitDays.some((d) => isSameDay(d, day))}
+                    isLossDay={lossDays.some((d) => isSameDay(d, day))}
                     isTransactionDay={transactionDays.some((d) =>
                       isSameDay(d, day)
                     )}
-                    isSelected={selectedDate && isSameDay(selectedDate, day)}
+                    isSelected={
+                      selectedDate !== null && isSameDay(selectedDate, day)
+                    }
                     onClick={handleDateClick}
                   />
                 );
@@ -398,16 +455,32 @@ export default function EnhancedFinancialCalendar({
 
           <div className="flex items-center gap-4 px-4 py-3 border-t bg-muted/20 text-xs">
             <div className="flex items-center gap-1">
+              <div className="h-2 w-2 rounded-full bg-green-500" />
+              <span>
+                {language === "vi"
+                  ? "Thu nhập > Chi tiêu"
+                  : "Income > Expenses"}
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="h-2 w-2 rounded-full bg-red-500" />
+              <span>
+                {language === "vi"
+                  ? "Chi tiêu > Thu nhập"
+                  : "Expenses > Income"}
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
               <div className="h-2 w-2 rounded-full bg-destructive" />
-              <span>High spending day</span>
+              <span>
+                {language === "vi" ? "Ngày chi tiêu cao" : "High spending day"}
+              </span>
             </div>
             <div className="flex items-center gap-1">
               <div className="h-2 w-2 rounded-full bg-primary" />
-              <span>Income day</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="h-2 w-2 rounded-full bg-muted-foreground" />
-              <span>Transaction day</span>
+              <span>
+                {language === "vi" ? "Ngày có thu nhập" : "Income day"}
+              </span>
             </div>
           </div>
         </CardContent>
@@ -466,7 +539,8 @@ export default function EnhancedFinancialCalendar({
                   </span>
                   {transactionsInMonth.length > 0 && (
                     <Badge variant="outline" className="mt-1 text-xs">
-                      {transactionsInMonth.length} transactions
+                      {transactionsInMonth.length}{" "}
+                      {language === "vi" ? "giao dịch" : "transactions"}
                     </Badge>
                   )}
                   {monthData.expenses > 0 && (
@@ -481,10 +555,16 @@ export default function EnhancedFinancialCalendar({
 
       <CardFooter className="flex justify-between p-2 border-t">
         <Button variant="outline" size="sm" onClick={toggleView}>
-          {showTransactions ? "Show Transactions" : "Show Calendar"}
+          {showTransactions
+            ? language === "vi"
+              ? "Hiển thị giao dịch"
+              : "Show Transactions"
+            : language === "vi"
+            ? "Hiển thị lịch"
+            : "Show Calendar"}
         </Button>
         <Button variant="outline" size="sm">
-          Export Report
+          {language === "vi" ? "Xuất báo cáo" : "Export Report"}
         </Button>
       </CardFooter>
 
@@ -502,7 +582,9 @@ export default function EnhancedFinancialCalendar({
                 : t.transactionsTitle}
             </DialogTitle>
             <DialogDescription id="transaction-details-description">
-              Transaction details for selected date
+              {language === "vi"
+                ? "Chi tiết giao dịch cho ngày đã chọn"
+                : "Transaction details for selected date"}
             </DialogDescription>
           </DialogHeader>
 
@@ -517,7 +599,7 @@ export default function EnhancedFinancialCalendar({
                   <div className="bg-primary/10 rounded-lg p-3 text-center">
                     <div className="flex items-center justify-center gap-1 text-sm text-muted-foreground">
                       <TrendingUp className="h-3.5 w-3.5 text-primary" />
-                      <span>Income</span>
+                      <span>{language === "vi" ? "Thu nhập" : "Income"}</span>
                     </div>
                     <p className="text-lg font-bold text-primary">
                       {formatCurrency(
@@ -531,7 +613,7 @@ export default function EnhancedFinancialCalendar({
                   <div className="bg-destructive/10 rounded-lg p-3 text-center">
                     <div className="flex items-center justify-center gap-1 text-sm text-muted-foreground">
                       <TrendingDown className="h-3.5 w-3.5 text-destructive" />
-                      <span>Expenses</span>
+                      <span>{language === "vi" ? "Chi tiêu" : "Expenses"}</span>
                     </div>
                     <p className="text-lg font-bold text-destructive">
                       {formatCurrency(
@@ -544,7 +626,9 @@ export default function EnhancedFinancialCalendar({
                   </div>
                 </div>
 
-                <h3 className="font-medium text-sm">Transactions</h3>
+                <h3 className="font-medium text-sm">
+                  {language === "vi" ? "Giao dịch" : "Transactions"}
+                </h3>
 
                 <AnimatePresence>
                   <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">

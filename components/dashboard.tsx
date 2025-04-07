@@ -1,3 +1,4 @@
+//dashboard.tsx :
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
@@ -50,9 +51,17 @@ import {
 // Wrap StatCards with React.memo to prevent unnecessary renders
 const MemoizedStatCards = React.memo(StatCards);
 // Wrap SpendingChart with React.memo to prevent unnecessary renders
-const MemoizedSpendingChart = React.memo(SpendingChart);
+const MemoizedSpendingChart = React.memo(
+  (props: { transactions: Transaction[]; isLoading: boolean }) => (
+    <SpendingChart {...props} />
+  )
+);
 // Wrap TransactionList with React.memo to prevent unnecessary renders
-const MemoizedTransactionList = React.memo(TransactionList);
+const MemoizedTransactionList = React.memo(
+  (props: { transactions: Transaction[]; isLoading: boolean }) => (
+    <TransactionList {...props} />
+  )
+);
 
 export default function Dashboard() {
   const { language, translations } = useLanguage();
@@ -182,7 +191,7 @@ export default function Dashboard() {
         // Nếu chưa đăng nhập, chỉ lưu vào localStorage
         const newGoal: Goal = {
           ...goal,
-          id: Date.now().toString(), // Tạo ID tạm thời
+          id: Date.now().toString(), // Tạo ID tạm thởi
         };
 
         const updatedGoals = [...goals, newGoal];
@@ -328,18 +337,23 @@ export default function Dashboard() {
   );
 
   // Get high spending days
-  const getHighSpendingDays = () => {
+  const getHighSpendingDays = (): Transaction[] => {
     const days: Record<string, number> = {};
+    const dayTransactions: Record<string, Transaction[]> = {};
 
     transactions
       .filter((t) => t.amount < 0)
       .forEach((t) => {
         days[t.date] = (days[t.date] || 0) + Math.abs(t.amount);
+        if (!dayTransactions[t.date]) {
+          dayTransactions[t.date] = [];
+        }
+        dayTransactions[t.date].push(t);
       });
 
     return Object.entries(days)
-      .filter(([_, amount]) => amount > 200000) // Threshold for "high spending"
-      .map(([date]) => new Date(date));
+      .filter(([_, amount]) => amount > 200000)
+      .flatMap(([date]) => dayTransactions[date]);
   };
 
   // Hàm điều hướng đến trang đăng nhập
@@ -491,7 +505,7 @@ export default function Dashboard() {
                         animate={{ opacity: 1 }}
                       >
                         <h2 className="text-xl font-semibold mb-4">
-                          All Transactions
+                          {t.allTransactions || "All Transactions"}
                         </h2>
                         <MemoizedTransactionList
                           transactions={transactions}
@@ -721,7 +735,7 @@ export default function Dashboard() {
       </main>
 
       <footer className="border-t py-6 text-center text-sm text-muted-foreground">
-        © 2024 CoinSight - {t.footerText}
+        &copy; 2025 CoinSight - {t.footerText}
       </footer>
 
       <AddTransactionModal

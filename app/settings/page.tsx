@@ -1,3 +1,4 @@
+//settings.tsx :
 "use client";
 
 import { useState, useEffect } from "react";
@@ -19,6 +20,7 @@ import {
   Sun,
   Monitor,
   ChevronLeft,
+  Home,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -52,10 +54,12 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { useLanguage } from "@/contexts/language-context";
 import { useAuth } from "@/contexts/auth-context";
-import { updateUser } from "@/lib/firebase/firestore";
-import { Separator } from "@/components/ui/separator";
+import { useTheme } from "next-themes";
+import Link from "next/link";
+import Logo from "@/components/logo";
 import { ModeToggle } from "@/components/mode-toggle";
 import LanguageCurrencySelector from "@/components/language-currency-selector";
+import { updateUser } from "@/lib/firebase/firestore";
 import {
   Dialog,
   DialogContent,
@@ -76,6 +80,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Separator } from "@radix-ui/react-dropdown-menu";
 
 const generalFormSchema = z.object({
   monthlyBudget: z.coerce.number().min(0),
@@ -246,363 +251,398 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="container max-w-6xl py-6 space-y-8">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-1"
-              onClick={() => router.push("/")}
-            >
-              <ChevronLeft className="h-4 w-4" />
-              {language === "en" ? "Back to Home" : "Quay về trang chủ"}
-            </Button>
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10">
+        <div className="container flex h-16 items-center justify-between px-4">
+          <div className="flex items-center gap-4">
+            <Logo />
+            <div className="hidden md:block">
+              <h1 className="text-lg font-medium">{t.title}</h1>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Link href="/" passHref>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                <span className="hidden md:inline">
+                  {language === "en"
+                    ? "Back to Dashboard"
+                    : "Quay lại Dashboard"}
+                </span>
+                <span className="inline md:hidden">
+                  <Home className="h-4 w-4" />
+                </span>
+              </Button>
+            </Link>
+            <LanguageCurrencySelector />
+            <ModeToggle />
           </div>
         </div>
-        <h1 className="text-3xl font-bold tracking-tight mt-4">{t.title}</h1>
-        <Separator className="my-4" />
-      </motion.div>
+      </header>
 
-      <Tabs
-        defaultValue="general"
-        value={activeTab}
-        onValueChange={setActiveTab}
-      >
-        <TabsList className="grid grid-cols-3 max-w-[600px]">
-          <TabsTrigger value="general" className="flex items-center gap-2">
-            <Settings2 className="h-4 w-4" />
-            <span>{t.general}</span>
-          </TabsTrigger>
-          <TabsTrigger value="appearance" className="flex items-center gap-2">
-            <Moon className="h-4 w-4" />
-            <span>{t.appearance}</span>
-          </TabsTrigger>
-          <TabsTrigger value="security" className="flex items-center gap-2">
-            <Shield className="h-4 w-4" />
-            <span>
-              {typeof t.security === "object" && t.security
-                ? t.security.title || "Security"
-                : t.security || "Security"}
-            </span>
-          </TabsTrigger>
-        </TabsList>
+      {/* Main Content */}
+      <main className="container mx-auto px-4 py-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-3xl font-bold">{t.title}</h2>
+          </div>
 
-        <div className="mt-6">
-          <TabsContent value="general">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <Card>
-                <CardHeader>
-                  <CardTitle>{t.general}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <Form {...generalForm}>
-                    <form
-                      onSubmit={generalForm.handleSubmit(onSaveGeneralSettings)}
-                      className="space-y-8"
-                    >
-                      <div className="space-y-6">
+          <Tabs
+            defaultValue="general"
+            value={activeTab}
+            onValueChange={setActiveTab}
+          >
+            <TabsList className="grid grid-cols-3 max-w-[600px]">
+              <TabsTrigger value="general" className="flex items-center gap-2">
+                <Settings2 className="h-4 w-4" />
+                <span>{t.general}</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="appearance"
+                className="flex items-center gap-2"
+              >
+                <Moon className="h-4 w-4" />
+                <span>{t.appearance}</span>
+              </TabsTrigger>
+              <TabsTrigger value="security" className="flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                <span>
+                  {typeof t.security === "object" && t.security
+                    ? t.security.title || "Security"
+                    : t.security || "Security"}
+                </span>
+              </TabsTrigger>
+            </TabsList>
+
+            <div className="mt-6">
+              <TabsContent value="general">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>{t.general}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      <Form {...generalForm}>
+                        <form
+                          onSubmit={generalForm.handleSubmit(
+                            onSaveGeneralSettings
+                          )}
+                          className="space-y-8"
+                        >
+                          <div className="space-y-6">
+                            <div>
+                              <h3 className="text-lg font-medium flex items-center gap-2">
+                                <PiggyBank className="h-5 w-5" />
+                                {t.budget}
+                              </h3>
+                              <Separator className="my-3" />
+
+                              <FormField
+                                control={generalForm.control}
+                                name="monthlyBudget"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>{t.monthlyBudget}</FormLabel>
+                                    <FormControl>
+                                      <Input type="number" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+
+                            <div>
+                              <h3 className="text-lg font-medium flex items-center gap-2">
+                                <Bell className="h-5 w-5" />
+                                {typeof t.notifications === "object"
+                                  ? "Notifications"
+                                  : t.notifications}
+                              </h3>
+                              <Separator className="my-3" />
+
+                              <div className="space-y-4">
+                                <FormField
+                                  control={generalForm.control}
+                                  name="pushNotifications"
+                                  render={({ field }) => (
+                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                      <div className="space-y-0.5">
+                                        <FormLabel className="text-base">
+                                          {t.pushNotifications}
+                                        </FormLabel>
+                                        <FormDescription>
+                                          {language === "en"
+                                            ? "Receive push notifications in your browser"
+                                            : "Nhận thông báo đẩy trong trình duyệt của bạn"}
+                                        </FormDescription>
+                                      </div>
+                                      <FormControl>
+                                        <Switch
+                                          checked={field.value}
+                                          onCheckedChange={field.onChange}
+                                        />
+                                      </FormControl>
+                                    </FormItem>
+                                  )}
+                                />
+
+                                <FormField
+                                  control={generalForm.control}
+                                  name="emailNotifications"
+                                  render={({ field }) => (
+                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                      <div className="space-y-0.5">
+                                        <FormLabel className="text-base">
+                                          {t.emailNotifications}
+                                        </FormLabel>
+                                        <FormDescription>
+                                          {
+                                            t.formDescriptions
+                                              .emailNotifications
+                                          }
+                                        </FormDescription>
+                                      </div>
+                                      <FormControl>
+                                        <Switch
+                                          checked={field.value}
+                                          onCheckedChange={field.onChange}
+                                        />
+                                      </FormControl>
+                                    </FormItem>
+                                  )}
+                                />
+
+                                <FormField
+                                  control={generalForm.control}
+                                  name="budgetAlerts"
+                                  render={({ field }) => (
+                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                      <div className="space-y-0.5">
+                                        <FormLabel className="text-base">
+                                          {t.budgetAlerts}
+                                        </FormLabel>
+                                        <FormDescription>
+                                          {t.formDescriptions.budgetAlerts}
+                                        </FormDescription>
+                                      </div>
+                                      <FormControl>
+                                        <Switch
+                                          checked={field.value}
+                                          onCheckedChange={field.onChange}
+                                        />
+                                      </FormControl>
+                                    </FormItem>
+                                  )}
+                                />
+
+                                <FormField
+                                  control={generalForm.control}
+                                  name="paymentReminders"
+                                  render={({ field }) => (
+                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                      <div className="space-y-0.5">
+                                        <FormLabel className="text-base">
+                                          {t.paymentReminders}
+                                        </FormLabel>
+                                        <FormDescription>
+                                          {language === "en"
+                                            ? "Reminders for recurring payments"
+                                            : "Nhắc nhở cho các khoản thanh toán định kỳ"}
+                                        </FormDescription>
+                                      </div>
+                                      <FormControl>
+                                        <Switch
+                                          checked={field.value}
+                                          onCheckedChange={field.onChange}
+                                        />
+                                      </FormControl>
+                                    </FormItem>
+                                  )}
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          <Button type="submit" disabled={isSaving}>
+                            {isSaving && (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            )}
+                            {t.saveChanges}
+                          </Button>
+                        </form>
+                      </Form>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              </TabsContent>
+
+              <TabsContent value="appearance">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>{t.appearance}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      <div className="space-y-4">
                         <div>
-                          <h3 className="text-lg font-medium flex items-center gap-2">
-                            <PiggyBank className="h-5 w-5" />
-                            {t.budget}
+                          <Label htmlFor="theme">{t.theme}</Label>
+                          <div className="flex items-center gap-2 mt-2">
+                            <ModeToggle />
+                          </div>
+                        </div>
+
+                        <div>
+                          <Label htmlFor="language">{t.language}</Label>
+                          <div className="flex items-center gap-2 mt-2">
+                            <LanguageCurrencySelector />
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              </TabsContent>
+
+              <TabsContent value="security">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>
+                        {typeof t.security === "object"
+                          ? t.security.title || "Security"
+                          : t.security || "Security"}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      <Form {...securityForm}>
+                        <form
+                          onSubmit={securityForm.handleSubmit(onChangePassword)}
+                          className="space-y-6"
+                        >
+                          <h3 className="text-lg font-medium">
+                            {t.changePassword}
                           </h3>
                           <Separator className="my-3" />
 
                           <FormField
-                            control={generalForm.control}
-                            name="monthlyBudget"
+                            control={securityForm.control}
+                            name="currentPassword"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>{t.monthlyBudget}</FormLabel>
+                                <FormLabel>{t.currentPassword}</FormLabel>
                                 <FormControl>
-                                  <Input type="number" {...field} />
+                                  <Input type="password" {...field} />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
                             )}
                           />
-                        </div>
 
-                        <div>
-                          <h3 className="text-lg font-medium flex items-center gap-2">
-                            <Bell className="h-5 w-5" />
-                            {typeof t.notifications === "object"
-                              ? "Notifications"
-                              : t.notifications}
-                          </h3>
-                          <Separator className="my-3" />
+                          <FormField
+                            control={securityForm.control}
+                            name="newPassword"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>{t.newPassword}</FormLabel>
+                                <FormControl>
+                                  <Input type="password" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
 
-                          <div className="space-y-4">
-                            <FormField
-                              control={generalForm.control}
-                              name="pushNotifications"
-                              render={({ field }) => (
-                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                                  <div className="space-y-0.5">
-                                    <FormLabel className="text-base">
-                                      {t.pushNotifications}
-                                    </FormLabel>
-                                    <FormDescription>
-                                      {language === "en"
-                                        ? "Receive push notifications in your browser"
-                                        : "Nhận thông báo đẩy trong trình duyệt của bạn"}
-                                    </FormDescription>
-                                  </div>
-                                  <FormControl>
-                                    <Switch
-                                      checked={field.value}
-                                      onCheckedChange={field.onChange}
-                                    />
-                                  </FormControl>
-                                </FormItem>
-                              )}
-                            />
+                          <FormField
+                            control={securityForm.control}
+                            name="confirmPassword"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>{t.confirmPassword}</FormLabel>
+                                <FormControl>
+                                  <Input type="password" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
 
-                            <FormField
-                              control={generalForm.control}
-                              name="emailNotifications"
-                              render={({ field }) => (
-                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                                  <div className="space-y-0.5">
-                                    <FormLabel className="text-base">
-                                      {t.emailNotifications}
-                                    </FormLabel>
-                                    <FormDescription>
-                                      {t.formDescriptions.emailNotifications}
-                                    </FormDescription>
-                                  </div>
-                                  <FormControl>
-                                    <Switch
-                                      checked={field.value}
-                                      onCheckedChange={field.onChange}
-                                    />
-                                  </FormControl>
-                                </FormItem>
-                              )}
-                            />
+                          <Button type="submit" disabled={isChangingPassword}>
+                            {isChangingPassword && (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            )}
+                            {t.saveChanges}
+                          </Button>
+                        </form>
+                      </Form>
 
-                            <FormField
-                              control={generalForm.control}
-                              name="budgetAlerts"
-                              render={({ field }) => (
-                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                                  <div className="space-y-0.5">
-                                    <FormLabel className="text-base">
-                                      {t.budgetAlerts}
-                                    </FormLabel>
-                                    <FormDescription>
-                                      {t.formDescriptions.budgetAlerts}
-                                    </FormDescription>
-                                  </div>
-                                  <FormControl>
-                                    <Switch
-                                      checked={field.value}
-                                      onCheckedChange={field.onChange}
-                                    />
-                                  </FormControl>
-                                </FormItem>
-                              )}
-                            />
+                      <Separator className="my-6" />
 
-                            <FormField
-                              control={generalForm.control}
-                              name="paymentReminders"
-                              render={({ field }) => (
-                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                                  <div className="space-y-0.5">
-                                    <FormLabel className="text-base">
-                                      {t.paymentReminders}
-                                    </FormLabel>
-                                    <FormDescription>
-                                      {language === "en"
-                                        ? "Reminders for recurring payments"
-                                        : "Nhắc nhở cho các khoản thanh toán định kỳ"}
-                                    </FormDescription>
-                                  </div>
-                                  <FormControl>
-                                    <Switch
-                                      checked={field.value}
-                                      onCheckedChange={field.onChange}
-                                    />
-                                  </FormControl>
-                                </FormItem>
-                              )}
-                            />
-                          </div>
-                        </div>
+                      <div>
+                        <h3 className="text-lg font-medium text-destructive flex items-center gap-2">
+                          <AlertTriangle className="h-5 w-5" />
+                          {t.deleteAccount}
+                        </h3>
+                        <p className="text-sm text-muted-foreground mt-2">
+                          {t.deleteAccountWarning}
+                        </p>
+
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="destructive" className="mt-4">
+                              {t.deleteButton}
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>
+                                {t.deleteAccount}
+                              </AlertDialogTitle>
+                              <AlertDialogDescription>
+                                {t.deleteAccountWarning}
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>
+                                {t.cancelButton}
+                              </AlertDialogCancel>
+                              <AlertDialogAction onClick={handleDeleteAccount}>
+                                {t.deleteButton}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
-
-                      <Button type="submit" disabled={isSaving}>
-                        {isSaving && (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        )}
-                        {t.saveChanges}
-                      </Button>
-                    </form>
-                  </Form>
-                </CardContent>
-              </Card>
-            </motion.div>
-          </TabsContent>
-
-          <TabsContent value="appearance">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <Card>
-                <CardHeader>
-                  <CardTitle>{t.appearance}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="theme">{t.theme}</Label>
-                      <div className="flex items-center gap-2 mt-2">
-                        <ModeToggle />
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="language">{t.language}</Label>
-                      <div className="flex items-center gap-2 mt-2">
-                        <LanguageCurrencySelector />
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          </TabsContent>
-
-          <TabsContent value="security">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <Card>
-                <CardHeader>
-                  <CardTitle>
-                    {typeof t.security === "object"
-                      ? t.security.title || "Security"
-                      : t.security || "Security"}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <Form {...securityForm}>
-                    <form
-                      onSubmit={securityForm.handleSubmit(onChangePassword)}
-                      className="space-y-6"
-                    >
-                      <h3 className="text-lg font-medium">
-                        {t.changePassword}
-                      </h3>
-                      <Separator className="my-3" />
-
-                      <FormField
-                        control={securityForm.control}
-                        name="currentPassword"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>{t.currentPassword}</FormLabel>
-                            <FormControl>
-                              <Input type="password" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={securityForm.control}
-                        name="newPassword"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>{t.newPassword}</FormLabel>
-                            <FormControl>
-                              <Input type="password" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={securityForm.control}
-                        name="confirmPassword"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>{t.confirmPassword}</FormLabel>
-                            <FormControl>
-                              <Input type="password" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <Button type="submit" disabled={isChangingPassword}>
-                        {isChangingPassword && (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        )}
-                        {t.saveChanges}
-                      </Button>
-                    </form>
-                  </Form>
-
-                  <Separator className="my-6" />
-
-                  <div>
-                    <h3 className="text-lg font-medium text-destructive flex items-center gap-2">
-                      <AlertTriangle className="h-5 w-5" />
-                      {t.deleteAccount}
-                    </h3>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      {t.deleteAccountWarning}
-                    </p>
-
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="destructive" className="mt-4">
-                          {t.deleteButton}
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>{t.deleteAccount}</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            {t.deleteAccountWarning}
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>
-                            {t.cancelButton}
-                          </AlertDialogCancel>
-                          <AlertDialogAction onClick={handleDeleteAccount}>
-                            {t.deleteButton}
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          </TabsContent>
-        </div>
-      </Tabs>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              </TabsContent>
+            </div>
+          </Tabs>
+        </motion.div>
+      </main>
     </div>
   );
 }
