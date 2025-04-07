@@ -12,6 +12,7 @@ import {
   limit,
   serverTimestamp,
   Timestamp,
+  setDoc,
 } from "firebase/firestore";
 import { db } from "./config";
 
@@ -196,7 +197,29 @@ export const getUser = async (userId: string) => {
 export const updateUser = async (userId: string, data: Partial<User>) => {
   try {
     const docRef = doc(db, "users", userId);
-    await updateDoc(docRef, data);
+
+    // Kiểm tra xem document đã tồn tại chưa
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      // Nếu đã tồn tại, cập nhật
+      await updateDoc(docRef, data);
+    } else {
+      // Nếu chưa tồn tại, tạo mới với dữ liệu mặc định
+      const defaultUserData: User = {
+        email: data.email || "",
+        displayName: data.displayName || "User",
+        photoURL: data.photoURL || "",
+        isPremium: false,
+        currency: "VND",
+        monthlyBudget: data.monthlyBudget || 0,
+        categories: ["food", "shopping", "bills", "entertainment", "other"],
+      };
+
+      // Merge dữ liệu mặc định với dữ liệu được cung cấp
+      await setDoc(docRef, { ...defaultUserData, ...data });
+    }
+
     return { id: userId, ...data };
   } catch (error) {
     console.error("Lỗi cập nhật thông tin người dùng:", error);

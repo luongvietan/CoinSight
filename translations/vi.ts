@@ -45,8 +45,10 @@ export const vi = {
     income: "Thu nhập",
     expenseTab: "Chuyển sang tab chi tiêu",
     incomeTab: "Chuyển sang tab thu nhập",
-    expenseDescription: "Ghi lại các khoản chi tiêu như mua sắm, hóa đơn, hoặc thực phẩm.",
-    incomeDescription: "Ghi lại các khoản thu nhập như lương, quà tặng, hoặc đầu tư.",
+    expenseDescription:
+      "Ghi lại các khoản chi tiêu như mua sắm, hóa đơn, hoặc thực phẩm.",
+    incomeDescription:
+      "Ghi lại các khoản thu nhập như lương, quà tặng, hoặc đầu tư.",
     descriptionLabel: "Mô tả",
     descriptionPlaceholder: "Cà phê tại Starbucks...",
     descriptionHint: "Nhập mô tả ngắn gọn về giao dịch của bạn",
@@ -91,17 +93,20 @@ export const vi = {
   },
   errorState: {
     title: "Rất tiếc! Đã xảy ra lỗi",
-    description: "Chúng tôi đang gặp sự cố kết nối với máy chủ. Vui lòng kiểm tra kết nối internet và thử lại.",
+    description:
+      "Chúng tôi đang gặp sự cố kết nối với máy chủ. Vui lòng kiểm tra kết nối internet và thử lại.",
     retryButton: "Thử lại",
   },
   transactionList: {
-    noTransactions: "Không tìm thấy giao dịch nào. Thêm giao dịch đầu tiên của bạn!",
+    noTransactions:
+      "Không tìm thấy giao dịch nào. Thêm giao dịch đầu tiên của bạn!",
     loadingTransactions: "Đang tải giao dịch...",
   },
   budgetTracking: {
     title: "Ngân sách theo danh mục",
     setBudget: "Đặt ngân sách",
-    noBudgets: "Chưa có ngân sách nào. Thêm ngân sách đầu tiên để theo dõi chi tiêu.",
+    noBudgets:
+      "Chưa có ngân sách nào. Thêm ngân sách đầu tiên để theo dõi chi tiêu.",
     exceeded: "Đã vượt quá",
     almostExceeded: "Gần vượt quá",
     setBudgetTitle: "Đặt ngân sách",
@@ -212,7 +217,8 @@ export const vi = {
   recurring: {
     title: "Giao dịch định kỳ",
     noRecurring: "Chưa có giao dịch định kỳ",
-    addRecurringPrompt: "Thêm giao dịch định kỳ cho thu nhập hoặc chi tiêu thường xuyên",
+    addRecurringPrompt:
+      "Thêm giao dịch định kỳ cho thu nhập hoặc chi tiêu thường xuyên",
     addRecurringButton: "Thêm giao dịch định kỳ",
     frequency: {
       daily: "Hàng ngày",
@@ -234,5 +240,58 @@ export const vi = {
     VND: "VND",
     exchangeRate: "Tỷ giá",
   },
-}
-
+  profile: {
+    title: "Hồ sơ",
+    personalInfo: "Thông tin cá nhân",
+    name: "Họ và tên",
+    email: "Email",
+    photoURL: "Ảnh đại diện",
+    changePhoto: "Thay đổi ảnh",
+    removePhoto: "Xóa ảnh",
+    uploadPhoto: "Tải ảnh lên",
+    uploadHint: "JPG, GIF hoặc PNG. Tối đa 2MB",
+    updateProfile: "Cập nhật hồ sơ",
+    updateSuccess: "Cập nhật hồ sơ thành công!",
+    updateError: "Cập nhật hồ sơ thất bại. Vui lòng thử lại.",
+    statistics: "Thống kê",
+    transactionsCount: "Tổng số giao dịch",
+    budgetsCount: "Ngân sách đang hoạt động",
+    goalsCount: "Mục tiêu tài chính",
+    joinedOn: "Ngày tham gia",
+  },
+  settings: {
+    title: "Cài đặt",
+    general: "Cài đặt chung",
+    appearance: "Giao diện",
+    theme: "Chủ đề",
+    language: "Ngôn ngữ",
+    currency: "Đơn vị tiền tệ",
+    budget: "Cài đặt ngân sách",
+    monthlyBudget: "Ngân sách hàng tháng",
+    notifications: "Thông báo",
+    pushNotifications: "Thông báo đẩy",
+    emailNotifications: "Thông báo qua email",
+    budgetAlerts: "Cảnh báo ngân sách",
+    paymentReminders: "Nhắc nhở thanh toán",
+    security: "Bảo mật",
+    changePassword: "Đổi mật khẩu",
+    currentPassword: "Mật khẩu hiện tại",
+    newPassword: "Mật khẩu mới",
+    confirmPassword: "Xác nhận mật khẩu mới",
+    twoFactor: "Xác thực hai yếu tố",
+    enable: "Bật",
+    disable: "Tắt",
+    saveChanges: "Lưu thay đổi",
+    resetDefaults: "Khôi phục mặc định",
+    deleteAccount: "Xóa tài khoản",
+    deleteAccountWarning:
+      "Hành động này không thể hoàn tác. Tất cả dữ liệu của bạn sẽ bị xóa vĩnh viễn.",
+    deleteButton: "Xóa tài khoản của tôi",
+    cancelButton: "Hủy",
+    saveSuccess: "Lưu cài đặt thành công!",
+    saveError: "Lưu cài đặt thất bại. Vui lòng thử lại.",
+    passwordChanged: "Đổi mật khẩu thành công!",
+    passwordError:
+      "Đổi mật khẩu thất bại. Vui lòng kiểm tra mật khẩu hiện tại của bạn.",
+  },
+};

@@ -19,6 +19,7 @@ import { useLanguage } from "@/contexts/language-context";
 import LanguageCurrencySelector from "./language-currency-selector";
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
+import Link from "next/link";
 
 interface HeaderProps {
   onAddClick: () => void;
@@ -141,13 +142,17 @@ export default function Header({ onAddClick }: HeaderProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56" align="end" forceMount>
-              <DropdownMenuItem>
-                <User className="mr-2 h-4 w-4" />
-                <span>{t.menuItems.profile}</span>
+              <DropdownMenuItem asChild>
+                <Link href="/profile" className="flex items-center w-full">
+                  <User className="mr-2 h-4 w-4" />
+                  <span>{t.menuItems.profile}</span>
+                </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Settings className="mr-2 h-4 w-4" />
-                <span>{t.menuItems.settings}</span>
+              <DropdownMenuItem asChild>
+                <Link href="/settings" className="flex items-center w-full">
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>{t.menuItems.settings}</span>
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout}>

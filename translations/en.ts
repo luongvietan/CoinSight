@@ -91,7 +91,8 @@ export const en = {
   },
   errorState: {
     title: "Oops! Something went wrong",
-    description: "We're having trouble connecting to our servers. Please check your internet connection and try again.",
+    description:
+      "We're having trouble connecting to our servers. Please check your internet connection and try again.",
     retryButton: "Try Again",
   },
   transactionList: {
@@ -212,7 +213,8 @@ export const en = {
   recurring: {
     title: "Recurring Transactions",
     noRecurring: "No recurring transactions yet",
-    addRecurringPrompt: "Add recurring transactions for regular income or expenses",
+    addRecurringPrompt:
+      "Add recurring transactions for regular income or expenses",
     addRecurringButton: "Add Recurring",
     frequency: {
       daily: "Daily",
@@ -234,5 +236,58 @@ export const en = {
     VND: "VND",
     exchangeRate: "Exchange Rate",
   },
-}
-
+  profile: {
+    title: "Profile",
+    personalInfo: "Personal Information",
+    name: "Full Name",
+    email: "Email",
+    photoURL: "Profile Photo",
+    changePhoto: "Change Photo",
+    removePhoto: "Remove Photo",
+    uploadPhoto: "Upload Photo",
+    uploadHint: "JPG, GIF or PNG. Max 2MB",
+    updateProfile: "Update Profile",
+    updateSuccess: "Profile updated successfully!",
+    updateError: "Failed to update profile. Please try again.",
+    statistics: "Statistics",
+    transactionsCount: "Total Transactions",
+    budgetsCount: "Active Budgets",
+    goalsCount: "Financial Goals",
+    joinedOn: "Joined On",
+  },
+  settings: {
+    title: "Settings",
+    general: "General Settings",
+    appearance: "Appearance",
+    theme: "Theme",
+    language: "Language",
+    currency: "Currency",
+    budget: "Budget Settings",
+    monthlyBudget: "Monthly Budget",
+    notifications: "Notifications",
+    pushNotifications: "Push Notifications",
+    emailNotifications: "Email Notifications",
+    budgetAlerts: "Budget Alerts",
+    paymentReminders: "Payment Reminders",
+    security: "Security",
+    changePassword: "Change Password",
+    currentPassword: "Current Password",
+    newPassword: "New Password",
+    confirmPassword: "Confirm New Password",
+    twoFactor: "Two-Factor Authentication",
+    enable: "Enable",
+    disable: "Disable",
+    saveChanges: "Save Changes",
+    resetDefaults: "Reset to Defaults",
+    deleteAccount: "Delete Account",
+    deleteAccountWarning:
+      "This action is irreversible. All your data will be permanently deleted.",
+    deleteButton: "Delete My Account",
+    cancelButton: "Cancel",
+    saveSuccess: "Settings saved successfully!",
+    saveError: "Failed to save settings. Please try again.",
+    passwordChanged: "Password changed successfully!",
+    passwordError:
+      "Failed to change password. Please check your current password.",
+  },
+};
