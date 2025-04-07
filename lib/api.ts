@@ -200,8 +200,11 @@ export async function fetchBudgets(): Promise<Budget[]> {
     querySnapshot.forEach((doc) => {
       const data = doc.data();
       budgets.push({
+        id: doc.id,
+        userId: data.userId,
         category: data.category,
-        amount: data.amount,
+        limit: data.limit || 0,
+        period: data.period || "monthly",
       });
     });
 

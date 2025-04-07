@@ -171,6 +171,24 @@ export default function Dashboard() {
     setGoals((prev) => prev.filter((g) => g.id !== goalId));
   };
 
+  const handleAddBudget = async (budget: Budget) => {
+    console.log("Thêm ngân sách:", budget);
+    // Cập nhật UI sau khi thêm thành công
+    refreshData();
+  };
+
+  const handleUpdateBudget = async (budget: Budget) => {
+    console.log("Cập nhật ngân sách:", budget);
+    // Cập nhật UI sau khi cập nhật thành công
+    refreshData();
+  };
+
+  const handleDeleteBudget = async (budgetId: string) => {
+    console.log("Xóa ngân sách:", budgetId);
+    // Cập nhật UI sau khi xóa thành công
+    refreshData();
+  };
+
   const handleAddRecurring = (recurring: RecurringTransaction) => {
     setRecurringTransactions((prev) => [...prev, recurring]);
   };
@@ -190,6 +208,11 @@ export default function Dashboard() {
   const handleRetry = () => {
     loadData();
   };
+
+  // Hàm để làm mới dữ liệu
+  const refreshData = useCallback(() => {
+    loadData();
+  }, [loadData]);
 
   // Tối ưu các tính toán thống kê bằng useMemo
   const statistics = useMemo(() => {
@@ -412,6 +435,9 @@ export default function Dashboard() {
                           budgets={budgets}
                           transactions={transactions}
                           isLoading={isLoading}
+                          onAddBudget={handleAddBudget}
+                          onUpdateBudget={handleUpdateBudget}
+                          onDeleteBudget={handleDeleteBudget}
                         />
                       </motion.div>
                     </div>

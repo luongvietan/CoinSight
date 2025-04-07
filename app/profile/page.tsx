@@ -51,6 +51,9 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Transaction } from "@/types/transaction";
 import { format } from "date-fns";
+import { fetchBudgets, getGoals } from "@/lib/api";
+import type { Budget } from "@/types/budget";
+import type { Goal } from "@/types/goal";
 
 const formSchema = z.object({
   displayName: z.string().min(2, {
@@ -68,6 +71,8 @@ export default function ProfilePage() {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [goals, setGoals] = useState<Goal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [userData, setUserData] = useState<any>(null);
 
@@ -102,26 +107,51 @@ export default function ProfilePage() {
         }
       };
 
-      // Fetch user transactions for statistics
+      // Fetch user data for statistics
       const fetchTransactions = async () => {
         try {
           setIsLoading(true);
-          const userTransactions = await getUserTransactions(user.uid);
-          // Kiểm tra nếu kết quả là mảng (tránh crash khi có lỗi)
+
+          // Fetch transactions, budgets, and goals in parallel
+          const [userTransactions, userBudgets, userGoals] = await Promise.all([
+            getUserTransactions(user.uid),
+            fetchBudgets(),
+            getGoals(),
+          ]);
+
+          // Handle transactions
           if (Array.isArray(userTransactions)) {
             setTransactions(userTransactions);
           } else {
             setTransactions([]);
             console.warn("Không lấy được dữ liệu giao dịch");
           }
+
+          // Handle budgets
+          if (Array.isArray(userBudgets)) {
+            setBudgets(userBudgets);
+          } else {
+            setBudgets([]);
+            console.warn("Không lấy được dữ liệu ngân sách");
+          }
+
+          // Handle goals
+          if (Array.isArray(userGoals)) {
+            setGoals(userGoals);
+          } else {
+            setGoals([]);
+            console.warn("Không lấy được dữ liệu mục tiêu");
+          }
         } catch (error) {
-          console.error("Error fetching transactions:", error);
+          console.error("Error fetching data:", error);
           // Đặt mảng rỗng để tránh crash
           setTransactions([]);
+          setBudgets([]);
+          setGoals([]);
 
           // Thông báo lỗi tới người dùng
           toast({
-            title: "Không thể tải dữ liệu giao dịch",
+            title: "Không thể tải dữ liệu",
             description: "Vui lòng thử lại sau",
             variant: "warning",
             duration: 3000,
@@ -134,7 +164,7 @@ export default function ProfilePage() {
       fetchUserData();
       fetchTransactions();
     }
-  }, [user, form]);
+  }, [user, form, toast]);
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -443,7 +473,7 @@ export default function ProfilePage() {
                       {isLoading ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
-                        0 // Replace with actual budget count
+                        budgets.length
                       )}
                     </span>
                   </div>
@@ -459,7 +489,7 @@ export default function ProfilePage() {
                       {isLoading ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
-                        0 // Replace with actual goals count
+                        goals.length
                       )}
                     </span>
                   </div>
