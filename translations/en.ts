@@ -250,9 +250,9 @@ export const en = {
     updateSuccess: "Profile updated successfully!",
     updateError: "Failed to update profile. Please try again.",
     statistics: "Statistics",
-    transactionsCount: "Total Transactions",
-    budgetsCount: "Active Budgets",
-    goalsCount: "Financial Goals",
+    transactionsCount: "Transactions Count",
+    budgetsCount: "Budgets Count",
+    goalsCount: "Goals Count",
     joinedOn: "Joined On",
   },
   settings: {

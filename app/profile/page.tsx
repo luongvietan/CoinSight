@@ -40,7 +40,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useLanguage } from "@/contexts/language-context";
 import { useAuth } from "@/contexts/auth-context";
-import { updateUser, getUserTransactions } from "@/lib/firebase/firestore";
+import {
+  updateUser,
+  getUserTransactions,
+  getUser,
+} from "@/lib/firebase/firestore";
+import { uploadFile, deleteFile } from "@/lib/firebase/storage";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -56,7 +61,7 @@ const formSchema = z.object({
 
 export default function ProfilePage() {
   const { language, translations } = useLanguage();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, updateUserProfile } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [isUpdating, setIsUpdating] = useState(false);
@@ -64,6 +69,7 @@ export default function ProfilePage() {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [userData, setUserData] = useState<any>(null);
 
   const t = translations[language].profile;
 
@@ -86,19 +92,46 @@ export default function ProfilePage() {
       form.setValue("displayName", user.displayName || "");
       form.setValue("email", user.email || "");
 
+      // Lấy thông tin người dùng từ Firestore
+      const fetchUserData = async () => {
+        try {
+          const data = await getUser(user.uid);
+          setUserData(data);
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+        }
+      };
+
       // Fetch user transactions for statistics
       const fetchTransactions = async () => {
         try {
           setIsLoading(true);
           const userTransactions = await getUserTransactions(user.uid);
-          setTransactions(userTransactions);
+          // Kiểm tra nếu kết quả là mảng (tránh crash khi có lỗi)
+          if (Array.isArray(userTransactions)) {
+            setTransactions(userTransactions);
+          } else {
+            setTransactions([]);
+            console.warn("Không lấy được dữ liệu giao dịch");
+          }
         } catch (error) {
           console.error("Error fetching transactions:", error);
+          // Đặt mảng rỗng để tránh crash
+          setTransactions([]);
+
+          // Thông báo lỗi tới người dùng
+          toast({
+            title: "Không thể tải dữ liệu giao dịch",
+            description: "Vui lòng thử lại sau",
+            variant: "warning",
+            duration: 3000,
+          });
         } finally {
           setIsLoading(false);
         }
       };
 
+      fetchUserData();
       fetchTransactions();
     }
   }, [user, form]);
@@ -126,16 +159,78 @@ export default function ProfilePage() {
     try {
       setIsUpdating(true);
 
-      // Thêm thông tin email từ user auth
-      await updateUser(user.uid, {
-        displayName: data.displayName,
-        email: user.email || "",
-      });
+      let photoURL = user.photoURL;
+
+      // Xử lý upload ảnh nếu có chọn ảnh mới
+      if (photoFile) {
+        try {
+          // Tạo đường dẫn cho file ảnh: users/{userId}/profile.jpg
+          const photoPath = `users/${user.uid}/profile.jpg`;
+
+          // Thử sử dụng Cloudinary trước (ưu tiên) nếu môi trường phát triển
+          // hoặc nếu đã từng gặp lỗi CORS với Firebase Storage
+          const useCloudinary =
+            typeof window !== "undefined" &&
+            (window.location.hostname === "localhost" ||
+              localStorage.getItem("use_cloudinary") === "true");
+
+          // uploadFile với tùy chọn sử dụng Cloudinary
+          const uploadedURL = await uploadFile(
+            photoFile,
+            photoPath,
+            useCloudinary
+          );
+
+          if (uploadedURL) {
+            photoURL = uploadedURL;
+
+            // Đánh dấu đã sử dụng Cloudinary thành công để lần sau tiếp tục sử dụng
+            if (useCloudinary && typeof window !== "undefined") {
+              localStorage.setItem("use_cloudinary", "true");
+            }
+
+            // Hiển thị thông báo thành công
+            toast({
+              title: "Tải lên ảnh đại diện thành công",
+              variant: "default",
+              duration: 3000,
+            });
+          } else {
+            // Nếu thất bại, hiển thị thông báo nhưng vẫn tiếp tục cập nhật profile
+            toast({
+              title: "Không thể tải lên ảnh đại diện",
+              description: "Thông tin hồ sơ vẫn được cập nhật",
+              variant: "warning",
+              duration: 3000,
+            });
+          }
+        } catch (uploadError) {
+          console.error("Error uploading photo:", uploadError);
+
+          // Đánh dấu để lần sau thử sử dụng Cloudinary
+          if (typeof window !== "undefined") {
+            localStorage.setItem("use_cloudinary", "true");
+          }
+
+          toast({
+            title: "Lỗi tải lên ảnh đại diện",
+            description: "Thông tin hồ sơ vẫn được cập nhật",
+            variant: "warning",
+            duration: 3000,
+          });
+        }
+      }
+
+      // Cập nhật profile trên Firebase Auth và Firestore
+      await updateUserProfile(data.displayName, photoURL || undefined);
 
       toast({
         title: t.updateSuccess,
         duration: 3000,
       });
+
+      // Clear photo file và preview sau khi đã upload thành công
+      setPhotoFile(null);
     } catch (error) {
       console.error("Error updating profile:", error);
       toast({

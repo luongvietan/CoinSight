@@ -22,6 +22,7 @@ import { auth } from "@/lib/firebase/config";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
+import { updateUser } from "@/lib/firebase/firestore";
 
 interface AuthContextType {
   user: FirebaseUser | null;
@@ -30,6 +31,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, name: string) => Promise<void>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
+  updateUserProfile: (displayName?: string, photoURL?: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -153,6 +155,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Thêm hàm cập nhật profile
+  const updateUserProfile = useCallback(
+    async (displayName?: string, photoURL?: string) => {
+      try {
+        if (!user) {
+          throw new Error("Người dùng chưa đăng nhập");
+        }
+
+        const updateData: { displayName?: string; photoURL?: string } = {};
+
+        if (displayName) {
+          updateData.displayName = displayName;
+        }
+
+        if (photoURL) {
+          updateData.photoURL = photoURL;
+        }
+
+        // Cập nhật profile trên Firebase Authentication
+        await updateProfile(user, updateData);
+
+        // Cập nhật thông tin trong Firestore
+        await updateUser(user.uid, updateData);
+
+        // Cập nhật user state
+        setUser({ ...user });
+      } catch (error: any) {
+        console.error("Cập nhật profile thất bại:", error.message);
+        throw error;
+      }
+    },
+    [user]
+  );
+
   // Memoized context value
   const contextValue = useMemo(
     () => ({
@@ -162,8 +198,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signUp,
       signOut,
       resetPassword,
+      updateUserProfile,
     }),
-    [user, loading, signIn, signUp, signOut, resetPassword]
+    [user, loading, signIn, signUp, signOut, resetPassword, updateUserProfile]
   );
 
   return (

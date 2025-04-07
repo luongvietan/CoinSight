@@ -1,11 +1,12 @@
 import { initializeApp, getApps } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getAuth, connectAuthEmulator } from "firebase/auth";
 import {
   getFirestore,
   connectFirestoreEmulator,
   initializeFirestore,
 } from "firebase/firestore";
-import { getFunctions } from "firebase/functions";
+import { getFunctions, connectFunctionsEmulator } from "firebase/functions";
+import { getStorage, connectStorageEmulator } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -29,5 +30,26 @@ const db = initializeFirestore(app, {
 });
 
 const functions = getFunctions(app);
+const storage = getStorage(app);
 
-export { app, auth, db, functions };
+// Sử dụng Firebase Emulator trong môi trường development
+if (
+  process.env.NODE_ENV === "development" &&
+  process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === "true"
+) {
+  console.log("🔥 Sử dụng Firebase Emulator");
+
+  // Kết nối với Auth Emulator
+  connectAuthEmulator(auth, "http://localhost:9099");
+
+  // Kết nối với Firestore Emulator
+  connectFirestoreEmulator(db, "localhost", 8080);
+
+  // Kết nối với Functions Emulator
+  connectFunctionsEmulator(functions, "localhost", 5001);
+
+  // Kết nối với Storage Emulator
+  connectStorageEmulator(storage, "localhost", 9199);
+}
+
+export { app, auth, db, functions, storage };
