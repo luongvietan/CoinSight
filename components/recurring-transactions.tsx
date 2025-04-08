@@ -56,10 +56,14 @@ export default function RecurringTransactions({
     nextDate: "",
     isActive: true,
   });
+  const [transactionType, setTransactionType] = useState<"expense" | "income">(
+    "expense"
+  );
 
   const handleOpenDialog = (recurring?: RecurringTransaction) => {
     if (recurring) {
       setEditingRecurring(recurring);
+      setTransactionType(recurring.amount < 0 ? "expense" : "income");
       setFormData({
         description: recurring.description,
         amount: Math.abs(recurring.amount).toString(),
@@ -70,6 +74,7 @@ export default function RecurringTransactions({
       });
     } else {
       setEditingRecurring(null);
+      setTransactionType("expense");
       setFormData({
         description: "",
         amount: "",
@@ -83,10 +88,12 @@ export default function RecurringTransactions({
   };
 
   const handleSaveRecurring = () => {
+    const amount = Number(formData.amount);
     const newRecurring: RecurringTransaction = {
       id: editingRecurring ? editingRecurring.id : Date.now().toString(),
       description: formData.description,
-      amount: -Math.abs(Number(formData.amount)), // Always negative for expenses
+      amount:
+        transactionType === "expense" ? -Math.abs(amount) : Math.abs(amount),
       category: formData.category,
       frequency: formData.frequency as
         | "daily"
@@ -170,6 +177,15 @@ export default function RecurringTransactions({
                               ? t.status.active
                               : t.status.paused}
                           </Badge>
+                          <Badge
+                            variant={
+                              recurring.amount > 0 ? "success" : "destructive"
+                            }
+                          >
+                            {recurring.amount > 0
+                              ? t.income || "Thu nhập"
+                              : t.expense || "Chi tiêu"}
+                          </Badge>
                         </div>
                       </div>
                       <div className="flex space-x-2">
@@ -211,7 +227,13 @@ export default function RecurringTransactions({
                     <div className="grid grid-cols-2 gap-4 mb-3 text-sm">
                       <div>
                         <p className="text-muted-foreground">Amount</p>
-                        <p className="font-medium text-destructive">
+                        <p
+                          className={`font-medium ${
+                            recurring.amount < 0
+                              ? "text-destructive"
+                              : "text-green-600"
+                          }`}
+                        >
                           {formatCurrency(recurring.amount)}
                         </p>
                       </div>
@@ -240,15 +262,43 @@ export default function RecurringTransactions({
           aria-describedby="recurring-transaction-description"
         >
           <DialogHeader>
-            <DialogTitle>Add Recurring Transaction</DialogTitle>
+            <DialogTitle>
+              {editingRecurring ? "Chỉnh sửa" : "Thêm"} giao dịch định kỳ{" "}
+              {transactionType === "expense" ? "(Chi tiêu)" : "(Thu nhập)"}
+            </DialogTitle>
             <DialogDescription id="recurring-transaction-description">
-              Set up a transaction that repeats automatically.
+              {t.dialogDescription ||
+                "Thiết lập giao dịch tự động lặp lại theo định kỳ."}
             </DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="description">Description</Label>
+              <Label>Loại giao dịch</Label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant={
+                    transactionType === "expense" ? "default" : "outline"
+                  }
+                  className="flex-1"
+                  onClick={() => setTransactionType("expense")}
+                >
+                  {t.expense || "Chi tiêu"}
+                </Button>
+                <Button
+                  type="button"
+                  variant={transactionType === "income" ? "default" : "outline"}
+                  className="flex-1"
+                  onClick={() => setTransactionType("income")}
+                >
+                  {t.income || "Thu nhập"}
+                </Button>
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="description">{t.description || "Mô tả"}</Label>
               <Input
                 id="description"
                 value={formData.description}
@@ -259,7 +309,7 @@ export default function RecurringTransactions({
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="amount">Amount</Label>
+              <Label htmlFor="amount">{t.amount || "Số tiền"}</Label>
               <Input
                 id="amount"
                 type="number"
@@ -272,7 +322,7 @@ export default function RecurringTransactions({
 
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="category">Category</Label>
+                <Label htmlFor="category">{t.category || "Danh mục"}</Label>
                 <Select
                   value={formData.category}
                   onValueChange={(value) =>
@@ -280,19 +330,39 @@ export default function RecurringTransactions({
                   }
                 >
                   <SelectTrigger id="category">
-                    <SelectValue placeholder="Select category" />
+                    <SelectValue
+                      placeholder={t.selectCategory || "Chọn danh mục"}
+                    />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="food">Food</SelectItem>
-                    <SelectItem value="shopping">Shopping</SelectItem>
-                    <SelectItem value="bills">Bills</SelectItem>
-                    <SelectItem value="entertainment">Entertainment</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
+                    <SelectItem value="food">
+                      {t.categories?.food || "Ăn uống"}
+                    </SelectItem>
+                    <SelectItem value="shopping">
+                      {t.categories?.shopping || "Mua sắm"}
+                    </SelectItem>
+                    <SelectItem value="bills">
+                      {t.categories?.bills || "Hóa đơn"}
+                    </SelectItem>
+                    <SelectItem value="entertainment">
+                      {t.categories?.entertainment || "Giải trí"}
+                    </SelectItem>
+                    <SelectItem value="salary">
+                      {t.categories?.salary || "Lương"}
+                    </SelectItem>
+                    <SelectItem value="investment">
+                      {t.categories?.investment || "Đầu tư"}
+                    </SelectItem>
+                    <SelectItem value="other">
+                      {t.categories?.other || "Khác"}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="frequency">Frequency</Label>
+                <Label htmlFor="frequency">
+                  {t.frequencyLabel || "Tần suất"}
+                </Label>
                 <Select
                   value={formData.frequency}
                   onValueChange={(value) =>
@@ -300,7 +370,9 @@ export default function RecurringTransactions({
                   }
                 >
                   <SelectTrigger id="frequency">
-                    <SelectValue placeholder="Select frequency" />
+                    <SelectValue
+                      placeholder={t.selectFrequency || "Chọn tần suất"}
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="daily">{t.frequency.daily}</SelectItem>
@@ -315,7 +387,9 @@ export default function RecurringTransactions({
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="nextDate">{t.nextOccurrence}</Label>
+              <Label htmlFor="nextDate">
+                {t.nextOccurrence || "Ngày bắt đầu"}
+              </Label>
               <Input
                 id="nextDate"
                 type="date"
@@ -334,13 +408,13 @@ export default function RecurringTransactions({
                   setFormData({ ...formData, isActive: checked })
                 }
               />
-              <Label htmlFor="isActive">Active</Label>
+              <Label htmlFor="isActive">{t.isActive || "Kích hoạt"}</Label>
             </div>
           </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-              Cancel
+              {t.cancel || "Hủy"}
             </Button>
             <Button
               onClick={handleSaveRecurring}
@@ -348,7 +422,7 @@ export default function RecurringTransactions({
                 !formData.description || !formData.amount || !formData.nextDate
               }
             >
-              {t.saveRecurringButton}
+              {t.saveRecurringButton || "Lưu"}
             </Button>
           </DialogFooter>
         </DialogContent>

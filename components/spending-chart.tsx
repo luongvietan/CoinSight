@@ -112,8 +112,8 @@ export default function SpendingChart({
   const { language, translations, currency, exchangeRates, refreshRates } =
     useLanguage();
   const [chartType, setChartType] = useState<ChartType>("line");
-  const [timeRange, setTimeRange] = useState<TimeRange>("3m");
-  const [groupBy, setGroupBy] = useState<GroupBy>("month");
+  const [timeRange, setTimeRange] = useState<TimeRange>("all");
+  const [groupBy, setGroupBy] = useState<GroupBy>("day");
   const [showMobileChart, setShowMobileChart] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);

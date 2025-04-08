@@ -609,3 +609,189 @@ export async function getAiInsights(
     }, 1500);
   });
 }
+
+// Add a new recurring transaction
+export async function addRecurringTransaction(
+  recurring: Omit<RecurringTransaction, "id">
+): Promise<RecurringTransaction> {
+  try {
+    const user = auth.currentUser;
+    if (!user) {
+      throw new Error("Người dùng chưa đăng nhập");
+    }
+
+    const recurringData = {
+      userId: user.uid,
+      description: recurring.description,
+      amount: recurring.amount,
+      category: recurring.category,
+      frequency: recurring.frequency,
+      nextDate: Timestamp.fromDate(new Date(recurring.nextDate)),
+      isActive: recurring.isActive,
+      createdAt: serverTimestamp(),
+    };
+
+    const docRef = await addDoc(
+      collection(db, "recurring_transactions"),
+      recurringData
+    );
+
+    return {
+      id: docRef.id,
+      ...recurring,
+    };
+  } catch (error) {
+    console.error("Lỗi khi thêm giao dịch định kỳ:", error);
+    throw error;
+  }
+}
+
+// Update a recurring transaction
+export async function updateRecurringTransaction(
+  recurring: RecurringTransaction
+): Promise<void> {
+  try {
+    const user = auth.currentUser;
+    if (!user) {
+      throw new Error("Người dùng chưa đăng nhập");
+    }
+
+    const recurringRef = doc(db, "recurring_transactions", recurring.id);
+    await updateDoc(recurringRef, {
+      description: recurring.description,
+      amount: recurring.amount,
+      category: recurring.category,
+      frequency: recurring.frequency,
+      nextDate: Timestamp.fromDate(new Date(recurring.nextDate)),
+      isActive: recurring.isActive,
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    console.error("Lỗi khi cập nhật giao dịch định kỳ:", error);
+    throw error;
+  }
+}
+
+// Delete a recurring transaction
+export async function deleteRecurringTransaction(
+  recurringId: string
+): Promise<void> {
+  try {
+    const user = auth.currentUser;
+    if (!user) {
+      throw new Error("Người dùng chưa đăng nhập");
+    }
+
+    const recurringRef = doc(db, "recurring_transactions", recurringId);
+    await deleteDoc(recurringRef);
+  } catch (error) {
+    console.error("Lỗi khi xóa giao dịch định kỳ:", error);
+    throw error;
+  }
+}
+
+// Process recurring transactions - check and create transactions based on scheduled dates
+export async function processRecurringTransactions(): Promise<{
+  processedCount: number;
+  totalAmount: number;
+  transactions: Array<{
+    description: string;
+    amount: number;
+    date: string;
+  }>;
+}> {
+  try {
+    const user = auth.currentUser;
+    if (!user) {
+      console.warn("Người dùng chưa đăng nhập");
+      return { processedCount: 0, totalAmount: 0, transactions: [] };
+    }
+
+    // Lấy tất cả giao dịch định kỳ và giao dịch thường
+    const recurringTransactions = await getRecurringTransactions();
+    const transactions = await fetchTransactions();
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time to start of day
+
+    let processedCount = 0;
+    let totalAmount = 0;
+    const processedTransactions: Array<{
+      description: string;
+      amount: number;
+      date: string;
+    }> = [];
+
+    for (const recurring of recurringTransactions) {
+      if (!recurring.isActive) continue;
+
+      const nextDate = new Date(recurring.nextDate);
+      nextDate.setHours(0, 0, 0, 0); // Reset time to start of day
+
+      // Kiểm tra nếu nextDate <= today (đã đến hoặc đã qua hạn)
+      if (nextDate <= today) {
+        const dateStr = nextDate.toISOString().split("T")[0];
+
+        // Kiểm tra nếu giao dịch đã tồn tại (tránh trùng lặp)
+        const transactionDescription = `${recurring.description} (Tự động)`;
+        const isDuplicate = transactions.some(
+          (t) =>
+            t.description === transactionDescription &&
+            t.amount === recurring.amount &&
+            t.date === dateStr
+        );
+
+        if (!isDuplicate) {
+          // Tạo giao dịch mới từ recurring transaction
+          await addTransaction({
+            description: transactionDescription,
+            amount: recurring.amount,
+            category: recurring.category,
+            date: dateStr,
+          });
+
+          processedCount++;
+          totalAmount += Math.abs(recurring.amount);
+          processedTransactions.push({
+            description: recurring.description,
+            amount: recurring.amount,
+            date: dateStr,
+          });
+        }
+
+        // Tính toán ngày tiếp theo dựa trên tần suất
+        let newNextDate = new Date(nextDate);
+
+        switch (recurring.frequency) {
+          case "daily":
+            newNextDate.setDate(newNextDate.getDate() + 1);
+            break;
+          case "weekly":
+            newNextDate.setDate(newNextDate.getDate() + 7);
+            break;
+          case "monthly":
+            newNextDate.setMonth(newNextDate.getMonth() + 1);
+            break;
+          case "yearly":
+            newNextDate.setFullYear(newNextDate.getFullYear() + 1);
+            break;
+        }
+
+        // Cập nhật recurring transaction với ngày tiếp theo mới
+        await updateDoc(doc(db, "recurring_transactions", recurring.id), {
+          nextDate: Timestamp.fromDate(newNextDate),
+          updatedAt: serverTimestamp(),
+        });
+      }
+    }
+
+    return {
+      processedCount,
+      totalAmount,
+      transactions: processedTransactions,
+    };
+  } catch (error) {
+    console.error("Lỗi khi xử lý giao dịch định kỳ:", error);
+    return { processedCount: 0, totalAmount: 0, transactions: [] };
+  }
+}

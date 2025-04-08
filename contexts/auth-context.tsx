@@ -17,12 +17,16 @@ import {
   signOut as firebaseSignOut,
   sendPasswordResetEmail,
   updateProfile,
+  GoogleAuthProvider,
+  signInWithPopup,
 } from "firebase/auth";
 import { auth } from "@/lib/firebase/config";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 import { updateUser } from "@/lib/firebase/firestore";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { db } from "@/lib/firebase/config";
 
 interface AuthContextType {
   user: FirebaseUser | null;
@@ -32,6 +36,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updateUserProfile: (displayName?: string, photoURL?: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -97,6 +102,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (result.user) {
           await updateProfile(result.user, {
             displayName: name,
+          });
+
+          // Tạo tài liệu người dùng trong Firestore
+          await setDoc(doc(db, "users", result.user.uid), {
+            email: result.user.email,
+            displayName: name,
+            photoURL: result.user.photoURL || "",
+            isPremium: false,
+            createdAt: serverTimestamp(),
+            currency: "VND",
+            monthlyBudget: 0,
+            categories: ["food", "shopping", "bills", "entertainment", "other"],
           });
 
           // Đặt token vào cookie để middleware có thể đọc
@@ -189,6 +206,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [user]
   );
 
+  const signInWithGoogle = useCallback(async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+
+      // Lưu thông tin người dùng vào Firestore
+      if (result.user) {
+        const userRef = doc(db, "users", result.user.uid);
+        await setDoc(
+          userRef,
+          {
+            email: result.user.email,
+            displayName: result.user.displayName,
+            photoURL: result.user.photoURL,
+            lastLogin: serverTimestamp(),
+            provider: "google",
+          },
+          { merge: true }
+        );
+      }
+
+      // Đặt token vào cookie
+      const token = await result.user.getIdToken();
+      Cookies.set("auth-token", token, { expires: 7 });
+
+      // Điều hướng đến trang chính
+      router.push("/");
+    } catch (error: any) {
+      console.error("Đăng nhập bằng Google thất bại:", error.message);
+      throw error;
+    }
+  }, [router]);
+
   // Memoized context value
   const contextValue = useMemo(
     () => ({
@@ -199,8 +249,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signOut,
       resetPassword,
       updateUserProfile,
+      signInWithGoogle,
     }),
-    [user, loading, signIn, signUp, signOut, resetPassword, updateUserProfile]
+    [
+      user,
+      loading,
+      signIn,
+      signUp,
+      signOut,
+      resetPassword,
+      updateUserProfile,
+      signInWithGoogle,
+    ]
   );
 
   return (

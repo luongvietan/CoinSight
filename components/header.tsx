@@ -9,6 +9,7 @@ import {
   Bell,
   Target,
   Wrench,
+  Menu,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -88,15 +89,15 @@ export default function Header({ onAddClick }: HeaderProps) {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 md:gap-3">
           <motion.div whileTap={{ scale: 0.95 }}>
             <Button
               onClick={onAddClick}
               className="bg-primary hover:bg-primary/90 relative"
               aria-label={t.addTransaction}
             >
-              <Plus className="mr-2 h-4 w-4" />
-              <span className="hidden md:inline">{t.addTransaction}</span>
+              <Plus className="h-4 w-4" />
+              <span className="hidden md:inline ml-2">{t.addTransaction}</span>
               <span className="sr-only md:hidden">{t.addTransaction}</span>
               <kbd className="hidden md:inline-flex ml-2 pointer-events-none h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100">
                 <span className="text-xs">Ctrl</span>N
@@ -104,14 +105,16 @@ export default function Header({ onAddClick }: HeaderProps) {
             </Button>
           </motion.div>
 
-          <LanguageCurrencySelector />
+          <div className="hidden md:block">
+            <LanguageCurrencySelector />
+          </div>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="outline"
                 size="icon"
-                className="relative"
+                className="relative hidden md:flex"
                 aria-label={t.notifications}
               >
                 <Bell className="h-4 w-4" />
@@ -131,7 +134,9 @@ export default function Header({ onAddClick }: HeaderProps) {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <ModeToggle />
+          <div className="flex items-center">
+            <ModeToggle />
+          </div>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -152,6 +157,60 @@ export default function Header({ onAddClick }: HeaderProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56" align="end" forceMount>
+              <DropdownMenuItem asChild>
+                <Link href="/profile" className="flex items-center w-full">
+                  <User className="mr-2 h-4 w-4" />
+                  <span>{t.menuItems.profile}</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/goals" className="flex items-center w-full">
+                  <Target className="mr-2 h-4 w-4" />
+                  <span>{translations[language].goals.title}</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/tools" className="flex items-center w-full">
+                  <Wrench className="mr-2 h-4 w-4" />
+                  <span>{t.menuItems.tools}</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/settings" className="flex items-center w-full">
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>{t.menuItems.settings}</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>{t.menuItems.logout}</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                className="md:hidden"
+                aria-label="Menu"
+              >
+                <Menu className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem>
+                <Bell className="mr-2 h-4 w-4" />
+                <span>{t.notifications}</span>
+                <Badge className="ml-2">2</Badge>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <div className="md:hidden px-2 py-1.5">
+                <LanguageCurrencySelector />
+              </div>
+              <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
                 <Link href="/profile" className="flex items-center w-full">
                   <User className="mr-2 h-4 w-4" />

@@ -32,6 +32,10 @@ import {
   addGoal,
   updateGoal,
   deleteGoal,
+  addRecurringTransaction,
+  updateRecurringTransaction,
+  deleteRecurringTransaction,
+  processRecurringTransactions,
 } from "@/lib/api";
 import { useLanguage } from "@/contexts/language-context";
 import { useAuth } from "@/contexts/auth-context";
@@ -39,6 +43,7 @@ import { useRouter } from "next/navigation";
 import React from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { formatCurrency } from "@/lib/utils";
 import {
   ExternalLink,
   Wrench,
@@ -107,6 +112,32 @@ export default function Dashboard() {
     setIsError(false);
 
     try {
+      // Xử lý các giao dịch định kỳ đến hạn
+      const processResult = await processRecurringTransactions();
+
+      // Hiển thị thông báo nếu có giao dịch định kỳ được tạo
+      if (processResult.processedCount > 0) {
+        toast({
+          title: `${processResult.processedCount} giao dịch định kỳ đã được tạo`,
+          description: processResult.transactions
+            .map(
+              (t) =>
+                `${t.description}: ${formatCurrency(Math.abs(t.amount))} (${
+                  t.amount < 0 ? "Chi" : "Thu"
+                })`
+            )
+            .join(", "),
+          variant: "default",
+          duration: 5000, // Hiển thị lâu hơn để người dùng có thể đọc
+        });
+
+        // Log chi tiết các giao dịch đã được tạo
+        console.log(
+          "Các giao dịch định kỳ đã được tạo:",
+          processResult.transactions
+        );
+      }
+
       // Gọi các API để lấy dữ liệu
       const [transactionsData, budgetsData, goalsData, recurringData] =
         await Promise.all([
@@ -287,20 +318,67 @@ export default function Dashboard() {
     refreshData();
   };
 
-  const handleAddRecurring = (recurring: RecurringTransaction) => {
-    setRecurringTransactions((prev) => [...prev, recurring]);
+  const handleAddRecurring = async (recurring: RecurringTransaction) => {
+    try {
+      const newRecurring = await addRecurringTransaction(recurring);
+      setRecurringTransactions((prev) => [...prev, newRecurring]);
+      toast({
+        title: "Thành công",
+        description: "Đã thêm giao dịch định kỳ mới",
+      });
+    } catch (error: any) {
+      console.error("Lỗi khi thêm giao dịch định kỳ:", error);
+      toast({
+        title: "Lỗi",
+        description:
+          error.message ||
+          "Không thể thêm giao dịch định kỳ. Vui lòng thử lại.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleUpdateRecurring = (recurring: RecurringTransaction) => {
-    setRecurringTransactions((prev) =>
-      prev.map((r) => (r.id === recurring.id ? recurring : r))
-    );
+  const handleUpdateRecurring = async (recurring: RecurringTransaction) => {
+    try {
+      await updateRecurringTransaction(recurring);
+      setRecurringTransactions((prev) =>
+        prev.map((r) => (r.id === recurring.id ? recurring : r))
+      );
+      toast({
+        title: "Thành công",
+        description: "Đã cập nhật giao dịch định kỳ",
+      });
+    } catch (error: any) {
+      console.error("Lỗi khi cập nhật giao dịch định kỳ:", error);
+      toast({
+        title: "Lỗi",
+        description:
+          error.message ||
+          "Không thể cập nhật giao dịch định kỳ. Vui lòng thử lại.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleDeleteRecurring = (recurringId: string) => {
-    setRecurringTransactions((prev) =>
-      prev.filter((r) => r.id !== recurringId)
-    );
+  const handleDeleteRecurring = async (recurringId: string) => {
+    try {
+      await deleteRecurringTransaction(recurringId);
+      setRecurringTransactions((prev) =>
+        prev.filter((r) => r.id !== recurringId)
+      );
+      toast({
+        title: "Thành công",
+        description: "Đã xóa giao dịch định kỳ",
+      });
+    } catch (error: any) {
+      console.error("Lỗi khi xóa giao dịch định kỳ:", error);
+      toast({
+        title: "Lỗi",
+        description:
+          error.message || "Không thể xóa giao dịch định kỳ. Vui lòng thử lại.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleRetry = () => {
