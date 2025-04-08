@@ -496,7 +496,7 @@ export default function Dashboard() {
                   </div>
                 </TabsContent>
 
-                <TabsContent value="transactions">
+                {/* <TabsContent value="transactions">
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div className="lg:col-span-2">
                       <motion.div
@@ -523,7 +523,7 @@ export default function Dashboard() {
                       />
                     </div>
                   </div>
-                </TabsContent>
+                </TabsContent> */}
 
                 <TabsContent value="budgets">
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
