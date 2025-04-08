@@ -219,7 +219,7 @@ function LoginPage() {
           </CardContent>
           <CardFooter className="flex justify-center">
             <Button variant="outline" asChild>
-              <Link to="/">Back to Home</Link>
+              <Link href="/">Back to Home</Link>
             </Button>
           </CardFooter>
         </Card>

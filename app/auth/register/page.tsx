@@ -1,5 +1,5 @@
 "use client";
-
+// export const dynamic = "force-dynamic";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -282,7 +282,7 @@ export default function RegisterPage() {
           </CardContent>
           <CardFooter className="flex justify-center">
             <Button variant="outline" asChild>
-              <Link to="/">Back to Home</Link>
+              <Link href="/">Back to Home</Link>
             </Button>
           </CardFooter>
         </Card>
