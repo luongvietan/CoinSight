@@ -1029,10 +1029,10 @@ export default function SpendingChart({
                   </div>
                 )}
               </div>
-              <TransactionList
+              {/* <TransactionList
                 transactions={recentTransactions}
                 isLoading={false}
-              />
+              /> */}
             </div>
           )}
         </CardContent>
