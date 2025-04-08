@@ -282,7 +282,7 @@ export default function RegisterPage() {
           </CardContent>
           <CardFooter className="flex justify-center">
             <Button variant="outline" asChild>
-              <Link href="/">Back to Home</Link>
+              <Link to="/">Back to Home</Link>
             </Button>
           </CardFooter>
         </Card>

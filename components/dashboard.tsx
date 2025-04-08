@@ -498,7 +498,7 @@ export default function Dashboard() {
 
                 <TabsContent value="transactions">
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-2">
+                    {/* <div className="lg:col-span-2">
                       <motion.div
                         className="bg-card rounded-lg shadow p-4"
                         initial={{ opacity: 0 }}
@@ -512,7 +512,7 @@ export default function Dashboard() {
                           isLoading={isLoading}
                         />
                       </motion.div>
-                    </div>
+                    </div> */}
 
                     <div className="space-y-6">
                       <RecurringTransactions
