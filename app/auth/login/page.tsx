@@ -44,7 +44,7 @@ export default function LoginPageWrapper() {
     </Suspense>
   );
 }
-export default function LoginPage() {
+function LoginPage() {
   const { language, translations } = useLanguage();
   const t = translations[language].auth.login;
   const router = useRouter();
