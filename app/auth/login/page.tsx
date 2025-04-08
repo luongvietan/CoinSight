@@ -1,5 +1,5 @@
 "use client";
-
+import { Suspense } from "react";
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -37,7 +37,13 @@ const formSchema = z.object({
   password: z.string().min(6),
   rememberMe: z.boolean().default(false),
 });
-
+export default function LoginPageWrapper() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <LoginPage />
+    </Suspense>
+  );
+}
 export default function LoginPage() {
   const { language, translations } = useLanguage();
   const t = translations[language].auth.login;
