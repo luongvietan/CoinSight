@@ -125,9 +125,9 @@ export default function SpendingChart({
   const t = translations[language].spendingChart;
 
   // Debug chartType
-  useEffect(() => {
-    console.log("Current chartType:", chartType);
-  }, [chartType]);
+  // useEffect(() => {
+  //   console.log("Current chartType:", chartType);
+  // }, [chartType]);
 
   // Di chuyển formatPeriodLabel vào đây
   const formatPeriodLabel = useCallback(
