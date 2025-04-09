@@ -162,6 +162,12 @@ function AiInsights({ transactions, isLoading }: AiInsightsProps) {
     setIsSampleData(false);
     setApiReason(null);
 
+    // Kiểm tra xem đang ở Vercel hay không
+    const isVercelEnvironment =
+      typeof window !== "undefined" &&
+      (window.location.hostname.includes("vercel.app") ||
+        window.location.hostname.includes("coinsight-app.com"));
+
     // Gọi API để lấy dữ liệu mới
     getAiInsights(transactions)
       .then((data) => {
@@ -177,6 +183,13 @@ function AiInsights({ transactions, isLoading }: AiInsightsProps) {
             "Bạn có thể tiết kiệm 500.000₫ bằng cách giảm chi phí giải trí",
           ]);
           setIsSampleData(true);
+
+          // Thêm thông tin nếu đang ở Vercel
+          if (isVercelEnvironment) {
+            setApiReason(
+              "Sử dụng phân tích tài chính cơ bản trên môi trường production"
+            );
+          }
         }
         setAiError(null);
       })
@@ -192,6 +205,11 @@ function AiInsights({ transactions, isLoading }: AiInsightsProps) {
           "Bạn có thể tiết kiệm 500.000₫ bằng cách giảm chi phí giải trí",
         ]);
         setIsSampleData(true);
+
+        // Thêm thông tin lỗi nếu đang ở Vercel
+        if (isVercelEnvironment) {
+          setApiReason("Đang sử dụng dữ liệu mẫu trên môi trường production");
+        }
       })
       .finally(() => {
         setAiLoading(false);

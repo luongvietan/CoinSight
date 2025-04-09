@@ -29,6 +29,7 @@ const AiInsights = dynamic(() => import("@/components/ai-insights"), {
     </div>
   ),
   ssr: false, // Disable SSR for AI component
+  suspense: true, // Sử dụng suspense cho tương thích tốt hơn với Next.js
 });
 
 export default function DashboardPage() {

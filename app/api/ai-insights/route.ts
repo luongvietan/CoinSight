@@ -17,6 +17,11 @@ const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "llama3.2";
 
 // Kiểm tra xem Ollama API có khả dụng không
 async function isOllamaAvailable(): Promise<boolean> {
+  // Luôn trả về false khi ở môi trường Vercel Production để dùng phân tích nội bộ
+  if (process.env.VERCEL_ENV === "production") {
+    return false;
+  }
+
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3000); // Giảm từ 5s xuống 3s
