@@ -23,7 +23,7 @@ export const createStripeCheckoutSession = async (data: StripeCheckoutData) => {
     const result = await createCheckoutSession(data);
     return result.data;
   } catch (error) {
-    console.error("Lỗi tạo phiên thanh toán Stripe:", error);
+    // console.error("Lỗi tạo phiên thanh toán Stripe:", error);
     throw error;
   }
 };
@@ -50,7 +50,7 @@ export const classifyTransaction = async (data: ClassifyTransactionData) => {
     const result = await classifyFunc(data);
     return result.data;
   } catch (error) {
-    console.error("Lỗi phân loại giao dịch:", error);
+    // console.error("Lỗi phân loại giao dịch:", error);
     throw error;
   }
 };

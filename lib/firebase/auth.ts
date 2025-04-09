@@ -40,7 +40,7 @@ export const registerUser = async (
 
     return user;
   } catch (error) {
-    console.error("Lỗi đăng ký:", error);
+    // console.error("Lỗi đăng ký:", error);
     throw error;
   }
 };
@@ -55,7 +55,7 @@ export const loginWithEmail = async (email: string, password: string) => {
     );
     return userCredential.user;
   } catch (error) {
-    console.error("Lỗi đăng nhập:", error);
+    // console.error("Lỗi đăng nhập:", error);
     throw error;
   }
 };
@@ -86,7 +86,7 @@ export const loginWithGoogle = async () => {
 
     return user;
   } catch (error) {
-    console.error("Lỗi đăng nhập với Google:", error);
+    // console.error("Lỗi đăng nhập với Google:", error);
     throw error;
   }
 };
@@ -96,7 +96,7 @@ export const signOut = async () => {
   try {
     await firebaseSignOut(auth);
   } catch (error) {
-    console.error("Lỗi đăng xuất:", error);
+    // console.error("Lỗi đăng xuất:", error);
     throw error;
   }
 };
@@ -106,7 +106,7 @@ export const resetPassword = async (email: string) => {
   try {
     await sendPasswordResetEmail(auth, email);
   } catch (error) {
-    console.error("Lỗi gửi email đặt lại mật khẩu:", error);
+    // console.error("Lỗi gửi email đặt lại mật khẩu:", error);
     throw error;
   }
 };

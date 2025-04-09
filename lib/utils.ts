@@ -1,5 +1,7 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { db } from "../firebase/firebaseConfig";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -98,8 +100,9 @@ export function getPercentageColor(
     return "text-red-500";
   }
 }
+
 export function logError(context, error, additionalData = {}) {
-  console.error(`[${context}] Error:`, error);
+  // console.error(`[${context}] Error:`, error);
 
   // Gửi lỗi đến service ngoài như Sentry
   if (typeof window !== "undefined" && window.Sentry) {
@@ -119,4 +122,31 @@ export function logError(context, error, additionalData = {}) {
     timestamp: serverTimestamp(),
     ...additionalData,
   });
+}
+
+/**
+ * Tạo một phiên bản debounced của hàm, chỉ gọi sau khi đã ngừng được gọi
+ * trong khoảng thời gian chờ đã chỉ định.
+ * @param fn Hàm cần debounce
+ * @param wait Thời gian chờ tính bằng milliseconds
+ * @returns Phiên bản debounced của hàm
+ */
+export function debounce<T extends (...args: any[]) => any>(
+  fn: T,
+  wait: number
+): (...args: Parameters<T>) => void {
+  let timeout: ReturnType<typeof setTimeout> | null = null;
+
+  return function (...args: Parameters<T>) {
+    const later = () => {
+      timeout = null;
+      fn(...args);
+    };
+
+    if (timeout !== null) {
+      clearTimeout(timeout);
+    }
+
+    timeout = setTimeout(later, wait);
+  };
 }

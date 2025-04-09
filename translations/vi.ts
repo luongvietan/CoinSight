@@ -188,9 +188,9 @@ export const vi = {
   },
   aiInsights: {
     title: "Gợi ý từ AI",
-    budgetUsage: "Sử dụng ngân sách",
-    noInsights:
-      "Chưa có gợi ý nào. Thêm nhiều giao dịch để nhận gợi ý cá nhân hóa.",
+    localModelInfo:
+      "Sử dụng Model Ollama local. Đảm bảo Ollama đang chạy trên máy của bạn.",
+    retryButton: "Làm mới",
   },
   themeToggle: {
     toggleTheme: "Chuyển đổi giao diện",

@@ -1,7 +1,15 @@
 //dashboard.tsx :
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  memo,
+  lazy,
+  Suspense,
+} from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useHotkeys } from "react-hotkeys-hook";
 import { motion, AnimatePresence } from "framer-motion";
@@ -68,7 +76,20 @@ const MemoizedTransactionList = React.memo(
   )
 );
 
-export default function Dashboard() {
+// Tạo các phiên bản memoized cho các component nặng
+const MemoizedAiInsights = memo(AiInsights);
+const MemoizedBudgetTracking = memo(BudgetTracking);
+const MemoizedFinancialCalendar = memo(FinancialCalendar);
+const MemoizedFinancialGoals = memo(FinancialGoals);
+const MemoizedRecurringTransactions = memo(RecurringTransactions);
+
+// Lazy load các component không cần thiết ngay lập tức
+const LazyExportData = lazy(() => import("@/components/export-data"));
+const LazyEnhancedFinancialCalendar = lazy(
+  () => import("@/components/enhanced-financial-calendar")
+);
+
+function Dashboard() {
   const { language, translations } = useLanguage();
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -185,32 +206,36 @@ export default function Dashboard() {
     }
   }, [loadData, authLoading]);
 
-  const handleAddTransaction = async (transaction: Transaction) => {
-    try {
-      // Gọi API để thêm giao dịch vào database
-      const newTransaction = await addTransaction({
-        description: transaction.description,
-        amount: transaction.amount,
-        category: transaction.category,
-        date: transaction.date,
-      });
-
-      // Cập nhật state UI với giao dịch mới
-      setTransactions((prev) => [newTransaction, ...prev]);
+  const handleAddTransaction = useCallback(
+    (transaction: Omit<Transaction, "id">) => {
       setIsAddModalOpen(false);
+      toast({
+        title: "Đang thêm giao dịch...",
+      });
 
-      toast.success({
-        title: t.successToast.title,
-        description: t.successToast.description,
-      });
-    } catch (error: any) {
-      console.error("Lỗi khi thêm giao dịch:", error);
-      toast.error({
-        title: "Lỗi",
-        description: error.message || "Không thể thêm giao dịch",
-      });
-    }
-  };
+      addTransaction(transaction)
+        .then(() => {
+          toast({
+            title: "Giao dịch đã được thêm",
+            description: "Giao dịch mới của bạn đã được thêm thành công",
+          });
+          // Thêm transaction mới vào state để tránh refresh toàn bộ danh sách
+          setTransactions((prev) => [
+            { ...transaction, id: `temp-${Date.now()}` } as Transaction,
+            ...prev,
+          ]);
+        })
+        .catch((error) => {
+          console.error("Error adding transaction:", error);
+          toast({
+            title: "Lỗi",
+            description: "Không thể thêm giao dịch. Vui lòng thử lại.",
+            variant: "destructive",
+          });
+        });
+    },
+    [toast, setTransactions, setIsAddModalOpen]
+  );
 
   const handleAddGoal = async (goal: Omit<Goal, "id">) => {
     try {
@@ -409,35 +434,58 @@ export default function Dashboard() {
   const getTransactionsForDate = useCallback(
     (date: Date) => {
       const dateString = date.toISOString().split("T")[0];
-      return transactions.filter((t) => t.date === dateString);
+      // Sử dụng filter và cache kết quả
+      return transactions.filter((t) => t.date.startsWith(dateString));
     },
     [transactions]
   );
 
   // Get high spending days
-  const getHighSpendingDays = (): Transaction[] => {
-    const days: Record<string, number> = {};
-    const dayTransactions: Record<string, Transaction[]> = {};
+  const getHighSpendingDays = useCallback(() => {
+    if (isLoading || transactions.length === 0) return [];
 
-    transactions
-      .filter((t) => t.amount < 0)
-      .forEach((t) => {
-        days[t.date] = (days[t.date] || 0) + Math.abs(t.amount);
-        if (!dayTransactions[t.date]) {
-          dayTransactions[t.date] = [];
-        }
-        dayTransactions[t.date].push(t);
-      });
+    // Giới hạn chỉ xử lý 100 giao dịch gần đây để tăng hiệu suất
+    const recentTransactions = transactions.slice(0, 100);
 
-    return Object.entries(days)
-      .filter(([_, amount]) => amount > 200000)
-      .flatMap(([date]) => dayTransactions[date]);
-  };
+    const dateMap: Record<string, number> = {};
+    recentTransactions.forEach((t) => {
+      if (t.amount < 0) {
+        const date = t.date.split("T")[0];
+        dateMap[date] = (dateMap[date] || 0) + Math.abs(t.amount);
+      }
+    });
+
+    // Chỉ lấy 5 ngày có chi tiêu cao nhất
+    return Object.entries(dateMap)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([date, amount]) => ({ date, amount }));
+  }, [transactions, isLoading]);
 
   // Hàm điều hướng đến trang đăng nhập
   const redirectToLogin = () => {
     router.push("/auth/login");
   };
+
+  // Sử dụng useMemo để lưu trữ các giá trị được tính toán từ transactions
+  const totalBalance = useMemo(() => {
+    if (isLoading) return 0;
+    return transactions.reduce((sum, t) => sum + t.amount, 0);
+  }, [transactions, isLoading]);
+
+  const totalIncome = useMemo(() => {
+    if (isLoading) return 0;
+    return transactions
+      .filter((t) => t.amount > 0)
+      .reduce((sum, t) => sum + t.amount, 0);
+  }, [transactions, isLoading]);
+
+  const totalExpenses = useMemo(() => {
+    if (isLoading) return 0;
+    return transactions
+      .filter((t) => t.amount < 0)
+      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+  }, [transactions, isLoading]);
 
   if (authLoading) {
     return (
@@ -513,16 +561,26 @@ export default function Dashboard() {
                 <TabsContent value="overview">
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div className="lg:col-span-2 space-y-6">
-                      <MemoizedSpendingChart
-                        transactions={transactions}
-                        isLoading={isLoading}
-                      />
+                      <motion.div
+                        className="bg-card rounded-lg shadow p-4"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.2 }} // Giảm thời gian transition
+                      >
+                        <h2 className="text-xl font-semibold mb-4">
+                          {t.spendingTrends}
+                        </h2>
+                        <MemoizedSpendingChart
+                          transactions={transactions.slice(0, 100)} // Giới hạn số lượng giao dịch để tăng tốc render
+                          isLoading={isLoading}
+                        />
+                      </motion.div>
 
                       <motion.div
                         className="bg-card rounded-lg shadow p-4"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        transition={{ delay: 0.3 }}
+                        transition={{ duration: 0.2, delay: 0.1 }}
                       >
                         <h2 className="text-xl font-semibold mb-4">
                           {t.recentTransactions}
@@ -539,12 +597,12 @@ export default function Dashboard() {
                         className="bg-card rounded-lg shadow p-4"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        transition={{ delay: 0.5 }}
+                        transition={{ duration: 0.2, delay: 0.2 }}
                       >
                         <h2 className="text-xl font-semibold mb-4">
                           {t.aiInsights}
                         </h2>
-                        <AiInsights
+                        <MemoizedAiInsights
                           transactions={transactions}
                           isLoading={isLoading}
                         />
@@ -554,12 +612,12 @@ export default function Dashboard() {
                         className="bg-card rounded-lg shadow p-4"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        transition={{ delay: 0.6 }}
+                        transition={{ duration: 0.2, delay: 0.3 }}
                       >
                         <h2 className="text-xl font-semibold mb-4">
                           {t.financialCalendar}
                         </h2>
-                        <FinancialCalendar
+                        <MemoizedFinancialCalendar
                           highSpendingDays={getHighSpendingDays()}
                           onSelectDate={setSelectedDate}
                           selectedDate={selectedDate}
@@ -593,7 +651,7 @@ export default function Dashboard() {
                     </div>
 
                     <div className="space-y-6">
-                      <RecurringTransactions
+                      <MemoizedRecurringTransactions
                         recurringTransactions={recurringTransactions}
                         onAddRecurring={handleAddRecurring}
                         onUpdateRecurring={handleUpdateRecurring}
@@ -614,7 +672,7 @@ export default function Dashboard() {
                         <h2 className="text-xl font-semibold mb-4">
                           {t.budgetTracking}
                         </h2>
-                        <BudgetTracking
+                        <MemoizedBudgetTracking
                           budgets={budgets}
                           transactions={transactions}
                           isLoading={isLoading}
@@ -637,7 +695,7 @@ export default function Dashboard() {
                 <TabsContent value="goals">
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div className="lg:col-span-2">
-                      <FinancialGoals
+                      <MemoizedFinancialGoals
                         goals={goals}
                         onAddGoal={handleAddGoal}
                         onUpdateGoal={handleUpdateGoal}
@@ -667,7 +725,7 @@ export default function Dashboard() {
                         <h2 className="text-xl font-semibold mb-4">
                           {t.aiInsights}
                         </h2>
-                        <AiInsights
+                        <MemoizedAiInsights
                           transactions={transactions}
                           isLoading={isLoading}
                         />
@@ -738,7 +796,7 @@ export default function Dashboard() {
                       </motion.div>
 
                       <div className="mt-6">
-                        <ExportData transactions={transactions} />
+                        <LazyExportData transactions={transactions} />
                       </div>
                     </div>
 
@@ -792,7 +850,7 @@ export default function Dashboard() {
                         <h2 className="text-xl font-semibold mb-4">
                           {t.financialCalendar}
                         </h2>
-                        <FinancialCalendar
+                        <MemoizedFinancialCalendar
                           highSpendingDays={getHighSpendingDays()}
                           onSelectDate={setSelectedDate}
                           selectedDate={selectedDate}
@@ -816,11 +874,17 @@ export default function Dashboard() {
         &copy; 2025 CoinSight - {t.footerText}
       </footer>
 
-      <AddTransactionModal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        onAdd={handleAddTransaction}
-      />
+      <AnimatePresence>
+        {isAddModalOpen && (
+          <AddTransactionModal
+            isOpen={isAddModalOpen}
+            onClose={() => setIsAddModalOpen(false)}
+            onAdd={handleAddTransaction}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
+
+export default memo(Dashboard); // Memoize toàn bộ component Dashboard

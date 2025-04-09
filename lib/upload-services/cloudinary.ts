@@ -48,7 +48,7 @@ export const uploadToCloudinary = async (
     const data = await response.json();
     return data.secure_url;
   } catch (error) {
-    console.error("Lỗi upload lên Cloudinary:", error);
+    // console.error("Lỗi upload lên Cloudinary:", error);
     throw error;
   }
 };

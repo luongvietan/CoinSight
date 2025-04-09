@@ -32,10 +32,10 @@ export const uploadFile = async (
           const userId = path.split("/")[1] || "unknown";
           return await uploadToCloudinary(file, `users/${userId}`);
         } catch (cloudinaryError) {
-          console.error(
-            "Lỗi upload lên Cloudinary, thử Firebase Storage:",
-            cloudinaryError
-          );
+          // console.error(
+          //   "Lỗi upload lên Cloudinary, thử Firebase Storage:",
+          //   cloudinaryError
+          // );
         }
       }
     }
@@ -47,7 +47,7 @@ export const uploadFile = async (
       const downloadURL = await getDownloadURL(snapshot.ref);
       return downloadURL;
     } catch (directError) {
-      console.error("Lỗi upload trực tiếp, thử qua API proxy:", directError);
+      // console.error("Lỗi upload trực tiếp, thử qua API proxy:", directError);
 
       // Phương pháp 2: Sử dụng API proxy
       if (typeof window !== "undefined") {
@@ -81,7 +81,7 @@ export const uploadFile = async (
           const result = await response.json();
           return result.url;
         } catch (proxyError) {
-          console.error("Lỗi upload qua proxy:", proxyError);
+          // console.error("Lỗi upload qua proxy:", proxyError);
           throw proxyError;
         }
       } else {
@@ -89,7 +89,7 @@ export const uploadFile = async (
       }
     }
   } catch (error) {
-    console.error("Lỗi upload file:", error);
+    // console.error("Lỗi upload file:", error);
 
     // Nếu đang ở chế độ development, trả về URL avatar tạm thời
     if (
@@ -113,7 +113,7 @@ export const deleteFile = async (path: string): Promise<void> => {
     const storageRef = ref(storage, path);
     await deleteObject(storageRef);
   } catch (error) {
-    console.error("Lỗi xóa file:", error);
+    // console.error("Lỗi xóa file:", error);
     // Không throw error để tránh crash ứng dụng
   }
 };

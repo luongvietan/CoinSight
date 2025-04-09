@@ -25,8 +25,8 @@ export async function fetchTransactions(): Promise<Transaction[]> {
   try {
     const user = auth.currentUser;
     if (!user) {
-      // console.warn("Người dùng chưa đăng nhập");
-      return [];
+      console.warn("Người dùng chưa đăng nhập");
+      return []; // Trả về mảng rỗng thay vì ném lỗi
     }
 
     // Đơn giản hóa truy vấn để tránh vấn đề về chỉ mục
@@ -62,8 +62,8 @@ export async function fetchTransactions(): Promise<Transaction[]> {
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
     );
   } catch (error) {
-    // console.error("Lỗi khi lấy giao dịch:", error);
-    return [];
+    console.error("Lỗi khi lấy giao dịch:", error);
+    return []; // Trả về mảng rỗng thay vì ném lỗi
   }
 }
 
@@ -100,7 +100,7 @@ export async function addTransaction(
       date: transaction.date,
     };
   } catch (error) {
-    // console.error("Lỗi khi thêm giao dịch:", error);
+    console.error("Lỗi khi thêm giao dịch:", error);
     throw error;
   }
 }
@@ -154,7 +154,7 @@ export async function updateTransaction(
       date: updatedData?.date?.toDate().toISOString().split("T")[0] || "",
     };
   } catch (error) {
-    // console.error("Lỗi khi cập nhật giao dịch:", error);
+    console.error("Lỗi khi cập nhật giao dịch:", error);
     throw error;
   }
 }
@@ -181,7 +181,7 @@ export async function deleteTransaction(id: string): Promise<void> {
 
     await deleteDoc(transactionRef);
   } catch (error) {
-    // console.error("Lỗi khi xóa giao dịch:", error);
+    console.error("Lỗi khi xóa giao dịch:", error);
     throw error;
   }
 }
@@ -191,8 +191,8 @@ export async function fetchBudgets(): Promise<Budget[]> {
   try {
     const user = auth.currentUser;
     if (!user) {
-      // console.warn("Người dùng chưa đăng nhập");
-      return [];
+      console.warn("Người dùng chưa đăng nhập");
+      return []; // Trả về mảng rỗng thay vì ném lỗi
     }
 
     // Đơn giản hóa truy vấn
@@ -215,8 +215,8 @@ export async function fetchBudgets(): Promise<Budget[]> {
 
     return budgets;
   } catch (error) {
-    // console.error("Lỗi khi lấy ngân sách:", error);
-    return [];
+    console.error("Lỗi khi lấy ngân sách:", error);
+    return []; // Trả về mảng rỗng thay vì ném lỗi
   }
 }
 
@@ -252,13 +252,8 @@ export async function getTransactionStats() {
       categoryStats,
     };
   } catch (error) {
-    // console.error("Lỗi khi lấy thống kê giao dịch:", error);
-    return {
-      totalIncome: 0,
-      totalExpense: 0,
-      netIncome: 0,
-      categoryBreakdown: [],
-    };
+    console.error("Lỗi khi lấy thống kê giao dịch:", error);
+    throw error;
   }
 }
 
@@ -267,8 +262,8 @@ export async function getGoals(): Promise<Goal[]> {
   try {
     const user = auth.currentUser;
     if (!user) {
-      // console.warn("Người dùng chưa đăng nhập");
-      return [];
+      console.warn("Người dùng chưa đăng nhập");
+      return []; // Trả về mảng rỗng thay vì ném lỗi
     }
 
     // Đơn giản hóa truy vấn
@@ -294,8 +289,8 @@ export async function getGoals(): Promise<Goal[]> {
 
     return goals;
   } catch (error) {
-    // console.error("Lỗi khi lấy mục tiêu tài chính:", error);
-    return [];
+    console.error("Lỗi khi lấy mục tiêu tài chính:", error);
+    return []; // Trả về mảng rỗng thay vì ném lỗi
   }
 }
 
@@ -329,7 +324,7 @@ export async function addGoal(goal: Omit<Goal, "id">): Promise<Goal> {
       deadline: goal.deadline,
     };
   } catch (error) {
-    // console.error("Lỗi khi thêm mục tiêu tài chính:", error);
+    console.error("Lỗi khi thêm mục tiêu tài chính:", error);
     throw error;
   }
 }
@@ -387,7 +382,7 @@ export async function updateGoal(
           : updatedData.deadline,
     };
   } catch (error) {
-    // console.error("Lỗi khi cập nhật mục tiêu tài chính:", error);
+    console.error("Lỗi khi cập nhật mục tiêu tài chính:", error);
     throw error;
   }
 }
@@ -414,7 +409,7 @@ export async function deleteGoal(id: string): Promise<void> {
 
     await deleteDoc(goalRef);
   } catch (error) {
-    // console.error("Lỗi khi xóa mục tiêu tài chính:", error);
+    console.error("Lỗi khi xóa mục tiêu tài chính:", error);
     throw error;
   }
 }
@@ -426,8 +421,8 @@ export async function getRecurringTransactions(): Promise<
   try {
     const user = auth.currentUser;
     if (!user) {
-      // console.warn("Người dùng chưa đăng nhập");
-      return [];
+      console.warn("Người dùng chưa đăng nhập");
+      return []; // Trả về mảng rỗng thay vì ném lỗi
     }
 
     // Đơn giản hóa truy vấn để tránh lỗi chỉ mục và quyền truy cập
@@ -461,51 +456,245 @@ export async function getRecurringTransactions(): Promise<
 
     return recurringTransactions;
   } catch (error) {
-    // console.error("Lỗi khi lấy giao dịch định kỳ:", error);
-    return [];
+    console.error("Lỗi khi lấy giao dịch định kỳ:", error);
+    return []; // Trả về mảng rỗng thay vì ném lỗi
   }
 }
 
-// Classify transaction using API route
+// Classify transaction using AI (mocked)
 export async function classifyTransaction(
   description: string
 ): Promise<{ category: string }> {
+  // Simulate API call to OpenAI
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      // Simple keyword matching for demo
+      const lowerDesc = description.toLowerCase();
+
+      if (
+        lowerDesc.includes("coffee") ||
+        lowerDesc.includes("starbucks") ||
+        lowerDesc.includes("ăn") ||
+        lowerDesc.includes("restaurant") ||
+        lowerDesc.includes("lunch") ||
+        lowerDesc.includes("dinner")
+      ) {
+        resolve({ category: "food" });
+      } else if (
+        lowerDesc.includes("grocery") ||
+        lowerDesc.includes("supermarket") ||
+        lowerDesc.includes("thực phẩm")
+      ) {
+        resolve({ category: "groceries" });
+      } else if (
+        lowerDesc.includes("quần") ||
+        lowerDesc.includes("áo") ||
+        lowerDesc.includes("clothes") ||
+        lowerDesc.includes("shirt") ||
+        lowerDesc.includes("pants")
+      ) {
+        resolve({ category: "clothing" });
+      } else if (
+        lowerDesc.includes("laptop") ||
+        lowerDesc.includes("phone") ||
+        lowerDesc.includes("điện thoại") ||
+        lowerDesc.includes("máy tính")
+      ) {
+        resolve({ category: "electronics" });
+      } else if (
+        lowerDesc.includes("điện") ||
+        lowerDesc.includes("nước") ||
+        lowerDesc.includes("bill") ||
+        lowerDesc.includes("utility")
+      ) {
+        resolve({ category: "bills" });
+      } else if (
+        lowerDesc.includes("rent") ||
+        lowerDesc.includes("thuê nhà") ||
+        lowerDesc.includes("mortgage")
+      ) {
+        resolve({ category: "rent" });
+      } else if (
+        lowerDesc.includes("taxi") ||
+        lowerDesc.includes("bus") ||
+        lowerDesc.includes("train") ||
+        lowerDesc.includes("xe")
+      ) {
+        resolve({ category: "transportation" });
+      } else if (
+        lowerDesc.includes("doctor") ||
+        lowerDesc.includes("hospital") ||
+        lowerDesc.includes("medicine") ||
+        lowerDesc.includes("bệnh")
+      ) {
+        resolve({ category: "healthcare" });
+      } else if (
+        lowerDesc.includes("school") ||
+        lowerDesc.includes("tuition") ||
+        lowerDesc.includes("học")
+      ) {
+        resolve({ category: "education" });
+      } else if (
+        lowerDesc.includes("phim") ||
+        lowerDesc.includes("game") ||
+        lowerDesc.includes("chơi") ||
+        lowerDesc.includes("movie")
+      ) {
+        resolve({ category: "entertainment" });
+      } else if (
+        lowerDesc.includes("travel") ||
+        lowerDesc.includes("hotel") ||
+        lowerDesc.includes("flight") ||
+        lowerDesc.includes("du lịch")
+      ) {
+        resolve({ category: "travel" });
+      } else if (
+        lowerDesc.includes("gift") ||
+        lowerDesc.includes("present") ||
+        lowerDesc.includes("quà")
+      ) {
+        resolve({ category: "gifts" });
+      } else if (
+        lowerDesc.includes("gym") ||
+        lowerDesc.includes("fitness") ||
+        lowerDesc.includes("thể dục")
+      ) {
+        resolve({ category: "fitness" });
+      } else if (
+        lowerDesc.includes("netflix") ||
+        lowerDesc.includes("spotify") ||
+        lowerDesc.includes("subscription")
+      ) {
+        resolve({ category: "subscriptions" });
+      } else if (lowerDesc.includes("salary") || lowerDesc.includes("lương")) {
+        resolve({ category: "salary" });
+      } else if (
+        lowerDesc.includes("freelance") ||
+        lowerDesc.includes("tự do")
+      ) {
+        resolve({ category: "freelance" });
+      } else if (
+        lowerDesc.includes("investment") ||
+        lowerDesc.includes("stock") ||
+        lowerDesc.includes("đầu tư")
+      ) {
+        resolve({ category: "investments" });
+      } else if (
+        lowerDesc.includes("mua") ||
+        lowerDesc.includes("buy") ||
+        lowerDesc.includes("purchase")
+      ) {
+        resolve({ category: "shopping" });
+      } else {
+        resolve({ category: "other" });
+      }
+    }, 500);
+  });
+}
+
+// Get AI insights (mocked)
+export async function getAiInsights(
+  transactions: Transaction[]
+): Promise<{ insights: string[] }> {
+  // Simulate API call
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve({
+        insights: [
+          "Bạn đã chi 40% thu nhập cho ăn uống - đề xuất giảm 10%",
+          "Chi tiêu mua sắm tăng 15% so với tháng trước",
+          "Bạn có thể tiết kiệm 500.000₫ bằng cách giảm chi phí giải trí",
+        ],
+      });
+    }, 1500);
+  });
+}
+
+// Get AI insights from Huggingface API
+export async function getAiInsights(
+  transactions: Transaction[]
+): Promise<{ insights: string[] }> {
   try {
-    if (!description || description.trim() === "") {
-      return { category: "other" };
+    // Không thực hiện API call nếu không có giao dịch
+    if (!transactions || transactions.length === 0) {
+      return { insights: [] };
     }
 
-    // Kiểm tra từ khóa đơn giản trước để giảm thiểu API calls
-    const lowerDesc = description.toLowerCase();
-    if (
-      lowerDesc.includes("coffee") ||
-      lowerDesc.includes("starbucks") ||
-      lowerDesc.includes("ăn") ||
-      lowerDesc.includes("restaurant") ||
-      lowerDesc.includes("lunch") ||
-      lowerDesc.includes("dinner")
-    ) {
-      return { category: "food" };
-    } else if (lowerDesc.includes("salary") || lowerDesc.includes("lương")) {
-      return { category: "salary" };
-    }
+    // Phân tích và tổng hợp dữ liệu giao dịch
+    const categories: Record<string, number> = {};
+    const totalIncome = transactions
+      .filter((t) => t.amount > 0)
+      .reduce((sum, t) => sum + t.amount, 0);
+    const totalExpense = transactions
+      .filter((t) => t.amount < 0)
+      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
 
-    // Lấy token người dùng hiện tại
-    const user = auth.currentUser;
-    if (!user) {
-      throw new Error("Người dùng chưa đăng nhập");
-    }
+    // Phân tích chi tiêu theo danh mục
+    transactions
+      .filter((t) => t.amount < 0)
+      .forEach((t) => {
+        categories[t.category] =
+          (categories[t.category] || 0) + Math.abs(t.amount);
+      });
 
-    const idToken = await user.getIdToken();
+    // Tạo ra biểu đồ chi tiêu theo danh mục
+    const categoryBreakdown = Object.entries(categories)
+      .map(([category, amount]) => {
+        const percentage = totalExpense > 0 ? (amount / totalExpense) * 100 : 0;
+        return {
+          category,
+          amount,
+          percentage: parseFloat(percentage.toFixed(1)),
+        };
+      })
+      .sort((a, b) => b.percentage - a.percentage);
 
-    // Gọi API route nội bộ
-    const response = await fetch("/api/classify-transaction", {
+    // Tạo ra thông tin đầu vào cho Huggingface
+    const prompt = `
+Dựa trên dữ liệu tài chính sau đây, hãy cung cấp 3-5 nhận xét hữu ích về chi tiêu và tiết kiệm:
+
+Tổng thu nhập: ${totalIncome.toLocaleString("vi-VN")}₫
+Tổng chi tiêu: ${totalExpense.toLocaleString("vi-VN")}₫
+Tỷ lệ chi tiêu/thu nhập: ${
+      totalIncome > 0 ? ((totalExpense / totalIncome) * 100).toFixed(1) : 0
+    }%
+
+Chi tiêu theo danh mục (tỷ lệ phần trăm trên tổng chi tiêu):
+${categoryBreakdown
+  .map(
+    (c) =>
+      `- ${c.category}: ${c.amount.toLocaleString("vi-VN")}₫ (${c.percentage}%)`
+  )
+  .join("\n")}
+
+Phân tích kỹ dữ liệu và đưa ra các lời khuyên cụ thể giúp người dùng quản lý tài chính tốt hơn.
+Những lời khuyên nên bao gồm:
+1. Nhận xét về các danh mục chi tiêu nhiều nhất
+2. Cách tiết kiệm chi phí cho các danh mục lớn
+3. Tỷ lệ chi tiêu/thu nhập hợp lý
+4. Mẹo cụ thể để cải thiện tình hình tài chính
+
+Kết quả trả về cần ngắn gọn, mỗi lời khuyên không quá 10-15 từ. Chỉ trả về danh sách lời khuyên, mỗi lời khuyên trên một dòng. KHÔNG bao gồm tiêu đề, đánh số hoặc bất kỳ nội dung giải thích nào khác.
+`;
+
+    // Gọi Huggingface API
+    const API_URL =
+      "https://api-inference.huggingface.co/models/meta-llama/Llama-2-70b-chat-hf";
+    const response = await fetch(API_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${idToken}`,
+        Authorization: `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
       },
-      body: JSON.stringify({ description }),
+      body: JSON.stringify({
+        inputs: prompt,
+        parameters: {
+          max_new_tokens: 250,
+          temperature: 0.7,
+          top_p: 0.9,
+          do_sample: true,
+        },
+      }),
     });
 
     if (!response.ok) {
@@ -513,289 +702,49 @@ export async function classifyTransaction(
     }
 
     const data = await response.json();
-    return { category: data.category || "other" };
-  } catch (error) {
-    // console.error("Lỗi khi gọi API phân loại giao dịch:", error);
-    return fallbackClassify(description.toLowerCase());
-  }
-}
 
-// Hàm phân loại dự phòng khi API lỗi
-function fallbackClassify(lowerDesc: string): { category: string } {
-  if (
-    lowerDesc.includes("coffee") ||
-    lowerDesc.includes("starbucks") ||
-    lowerDesc.includes("ăn") ||
-    lowerDesc.includes("restaurant") ||
-    lowerDesc.includes("lunch") ||
-    lowerDesc.includes("dinner")
-  ) {
-    return { category: "food" };
-  } else if (
-    lowerDesc.includes("grocery") ||
-    lowerDesc.includes("supermarket") ||
-    lowerDesc.includes("thực phẩm")
-  ) {
-    return { category: "groceries" };
-  } else if (
-    lowerDesc.includes("quần") ||
-    lowerDesc.includes("áo") ||
-    lowerDesc.includes("clothes") ||
-    lowerDesc.includes("shirt") ||
-    lowerDesc.includes("pants")
-  ) {
-    return { category: "clothing" };
-  } else if (
-    lowerDesc.includes("laptop") ||
-    lowerDesc.includes("phone") ||
-    lowerDesc.includes("điện thoại") ||
-    lowerDesc.includes("máy tính")
-  ) {
-    return { category: "electronics" };
-  } else if (
-    lowerDesc.includes("điện") ||
-    lowerDesc.includes("nước") ||
-    lowerDesc.includes("bill") ||
-    lowerDesc.includes("utility")
-  ) {
-    return { category: "bills" };
-  } else if (
-    lowerDesc.includes("rent") ||
-    lowerDesc.includes("thuê nhà") ||
-    lowerDesc.includes("mortgage")
-  ) {
-    return { category: "rent" };
-  } else if (
-    lowerDesc.includes("taxi") ||
-    lowerDesc.includes("bus") ||
-    lowerDesc.includes("train") ||
-    lowerDesc.includes("xe")
-  ) {
-    return { category: "transportation" };
-  } else if (
-    lowerDesc.includes("doctor") ||
-    lowerDesc.includes("hospital") ||
-    lowerDesc.includes("medicine") ||
-    lowerDesc.includes("bệnh")
-  ) {
-    return { category: "healthcare" };
-  } else if (
-    lowerDesc.includes("school") ||
-    lowerDesc.includes("tuition") ||
-    lowerDesc.includes("học")
-  ) {
-    return { category: "education" };
-  } else if (
-    lowerDesc.includes("phim") ||
-    lowerDesc.includes("game") ||
-    lowerDesc.includes("chơi") ||
-    lowerDesc.includes("movie")
-  ) {
-    return { category: "entertainment" };
-  } else if (
-    lowerDesc.includes("travel") ||
-    lowerDesc.includes("hotel") ||
-    lowerDesc.includes("flight") ||
-    lowerDesc.includes("du lịch")
-  ) {
-    return { category: "travel" };
-  } else if (
-    lowerDesc.includes("gift") ||
-    lowerDesc.includes("present") ||
-    lowerDesc.includes("quà")
-  ) {
-    return { category: "gifts" };
-  } else if (
-    lowerDesc.includes("gym") ||
-    lowerDesc.includes("fitness") ||
-    lowerDesc.includes("thể dục")
-  ) {
-    return { category: "fitness" };
-  } else if (
-    lowerDesc.includes("netflix") ||
-    lowerDesc.includes("spotify") ||
-    lowerDesc.includes("subscription")
-  ) {
-    return { category: "subscriptions" };
-  } else if (lowerDesc.includes("salary") || lowerDesc.includes("lương")) {
-    return { category: "salary" };
-  } else if (lowerDesc.includes("freelance") || lowerDesc.includes("tự do")) {
-    return { category: "freelance" };
-  } else if (
-    lowerDesc.includes("investment") ||
-    lowerDesc.includes("stock") ||
-    lowerDesc.includes("đầu tư")
-  ) {
-    return { category: "investments" };
-  } else if (
-    lowerDesc.includes("mua") ||
-    lowerDesc.includes("buy") ||
-    lowerDesc.includes("purchase")
-  ) {
-    return { category: "shopping" };
-  } else {
-    return { category: "other" };
-  }
-}
-
-// Get AI insights using local API route
-export async function getAiInsights(transactions: Transaction[]): Promise<{
-  insights: string[];
-  is_sample_data?: boolean;
-  reason?: string;
-  error?: string;
-}> {
-  try {
-    const user = auth.currentUser;
-    if (!user) {
-      throw new Error("Người dùng chưa đăng nhập");
+    // Xử lý phản hồi từ Huggingface
+    let aiResponse = "";
+    if (Array.isArray(data)) {
+      aiResponse = data[0].generated_text || "";
+    } else {
+      aiResponse = data.generated_text || "";
     }
 
-    // Kiểm tra cache
-    const cacheKey = `ai_insights_${hashTransactions(transactions)}`;
-    const cachedData = localStorage.getItem(cacheKey);
-    const now = new Date().getTime();
+    // Xử lý và làm sạch phản hồi để chỉ lấy các dòng có nội dung
+    const insights = aiResponse
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(
+        (line) =>
+          line.length > 0 &&
+          !line.startsWith("```") &&
+          !line.includes("Dựa trên dữ liệu") &&
+          !line.includes("Lời khuyên:")
+      )
+      .filter((_, index) => index < 5); // Giới hạn số lượng lời khuyên
 
-    if (cachedData) {
-      try {
-        const { data, timestamp } = JSON.parse(cachedData);
-        const cacheAge = now - timestamp;
-
-        // Cache hợp lệ trong 1 giờ
-        if (cacheAge < 3600000) {
-          return data;
-        }
-      } catch (e) {
-        // Nếu cache không hợp lệ, xóa nó
-        localStorage.removeItem(cacheKey);
-      }
-    }
-
-    // Tối ưu hóa dữ liệu giao dịch
-    const optimizedTransactions = transactions.slice(-50); // Chỉ lấy 50 giao dịch gần nhất
-
-    const idToken = await user.getIdToken();
-
-    // Hàm thực hiện request với retry
-    const makeRequest = async (retryCount = 0): Promise<Response> => {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 60000); // Tăng timeout lên 60 giây
-
-      try {
-        const response = await fetch("/api/ai-insights", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${idToken}`,
-            "Cache-Control": "no-cache",
-            Pragma: "no-cache",
-          },
-          body: JSON.stringify({
-            transactions: simplifyTransactions(optimizedTransactions),
-          }),
-          signal: controller.signal,
-          cache: "no-store",
-          next: { revalidate: 0 },
-        });
-
-        clearTimeout(timeoutId);
-        return response;
-      } catch (error) {
-        clearTimeout(timeoutId);
-        throw error;
-      }
-    };
-
-    // Thực hiện request với retry
-    let lastError;
-    for (let i = 0; i < 3; i++) {
-      try {
-        const response = await makeRequest(i);
-
-        if (!response.ok) {
-          throw new Error(`API request failed with status ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        // Kiểm tra xem API có trả về insights không
-        if (
-          !data.insights ||
-          !Array.isArray(data.insights) ||
-          data.insights.length === 0
-        ) {
-          return {
-            insights: [
+    return {
+      insights:
+        insights.length > 0
+          ? insights
+          : [
               "Bạn đã chi 40% thu nhập cho ăn uống - đề xuất giảm 10%",
               "Chi tiêu mua sắm tăng 15% so với tháng trước",
               "Bạn có thể tiết kiệm 500.000₫ bằng cách giảm chi phí giải trí",
             ],
-            is_sample_data: true,
-            reason: "API trả về mảng insights rỗng hoặc không hợp lệ",
-          };
-        }
-
-        // Lưu kết quả vào cache
-        localStorage.setItem(
-          cacheKey,
-          JSON.stringify({
-            data,
-            timestamp: now,
-          })
-        );
-
-        return data;
-      } catch (error) {
-        lastError = error;
-        if (error instanceof Error && error.name === "AbortError") {
-          // Nếu là lỗi timeout, đợi một chút trước khi thử lại
-          await new Promise((resolve) => setTimeout(resolve, 1000 * (i + 1)));
-          continue;
-        }
-        throw error;
-      }
-    }
-
-    // Nếu đã thử 3 lần mà vẫn thất bại
-    throw lastError;
+    };
   } catch (error) {
-    console.error("[API Client getAiInsights] Error:", error);
+    console.error("Lỗi khi gọi Huggingface API:", error);
+    // Trả về dữ liệu mẫu trong trường hợp lỗi
     return {
       insights: [
         "Bạn đã chi 40% thu nhập cho ăn uống - đề xuất giảm 10%",
         "Chi tiêu mua sắm tăng 15% so với tháng trước",
         "Bạn có thể tiết kiệm 500.000₫ bằng cách giảm chi phí giải trí",
       ],
-      is_sample_data: true,
-      error: error instanceof Error ? error.message : "Unknown error",
     };
   }
-}
-
-// Hàm tạo hash đơn giản từ mảng giao dịch để làm cache key
-function hashTransactions(transactions: Transaction[]): string {
-  // Chỉ lấy các trường quan trọng và đảm bảo thứ tự nhất quán
-  const simpleTransactions = simplifyTransactions(transactions);
-
-  // Tạo chuỗi MD5 hash từ chuỗi JSON
-  let hash = 0;
-  const str = JSON.stringify(simpleTransactions);
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    hash |= 0; // Convert to 32bit integer
-  }
-  return hash.toString(16);
-}
-
-// Đơn giản hóa mảng giao dịch, chỉ giữ lại các trường cần thiết cho AI
-function simplifyTransactions(transactions: Transaction[]): any[] {
-  return transactions.map((t) => ({
-    id: t.id,
-    amount: t.amount,
-    category: t.category,
-    date: t.date,
-  }));
 }
 
 // Add a new recurring transaction
@@ -829,7 +778,7 @@ export async function addRecurringTransaction(
       ...recurring,
     };
   } catch (error) {
-    // console.error("Lỗi khi thêm giao dịch định kỳ:", error);
+    console.error("Lỗi khi thêm giao dịch định kỳ:", error);
     throw error;
   }
 }
@@ -855,7 +804,7 @@ export async function updateRecurringTransaction(
       updatedAt: serverTimestamp(),
     });
   } catch (error) {
-    // console.error("Lỗi khi cập nhật giao dịch định kỳ:", error);
+    console.error("Lỗi khi cập nhật giao dịch định kỳ:", error);
     throw error;
   }
 }
@@ -873,7 +822,7 @@ export async function deleteRecurringTransaction(
     const recurringRef = doc(db, "recurring_transactions", recurringId);
     await deleteDoc(recurringRef);
   } catch (error) {
-    // console.error("Lỗi khi xóa giao dịch định kỳ:", error);
+    console.error("Lỗi khi xóa giao dịch định kỳ:", error);
     throw error;
   }
 }
@@ -891,7 +840,7 @@ export async function processRecurringTransactions(): Promise<{
   try {
     const user = auth.currentUser;
     if (!user) {
-      // console.warn("Người dùng chưa đăng nhập");
+      console.warn("Người dùng chưa đăng nhập");
       return { processedCount: 0, totalAmount: 0, transactions: [] };
     }
 
@@ -979,7 +928,7 @@ export async function processRecurringTransactions(): Promise<{
       transactions: processedTransactions,
     };
   } catch (error) {
-    // console.error("Lỗi khi xử lý giao dịch định kỳ:", error);
+    console.error("Lỗi khi xử lý giao dịch định kỳ:", error);
     return { processedCount: 0, totalAmount: 0, transactions: [] };
   }
 }

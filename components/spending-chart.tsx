@@ -203,6 +203,31 @@ export default function SpendingChart({
     );
   }, [filteredTransactions, selectedCategories]);
 
+  // Thêm memo hóa cho các hàm tìm kiếm
+  const getCategoryColor = useCallback(
+    (categoryId: string): string => {
+      const category = categories.find((c) => c.id === categoryId);
+      return category?.color || "#64748b"; // Default color if not found
+    },
+    [categories]
+  );
+
+  const getCategoryName = useCallback(
+    (categoryId: string): string => {
+      const category = categories.find((c) => c.id === categoryId);
+      return category?.name || categoryId; // Default to ID if not found
+    },
+    [categories]
+  );
+
+  const formatYAxis = useCallback(
+    (value: number): string => {
+      if (value === 0) return "0";
+      return formatCompactNumber(value, currency, exchangeRates);
+    },
+    [currency, exchangeRates]
+  );
+
   // Get recent transactions (last 5)
   const recentTransactions = useMemo(() => {
     return [...categoryFilteredTransactions]
@@ -210,114 +235,91 @@ export default function SpendingChart({
       .slice(0, 5);
   }, [categoryFilteredTransactions]);
 
-  // Prepare chart data based on groupBy
+  // Tối ưu tạo dữ liệu biểu đồ bằng cách memoize
   const chartData = useMemo(() => {
-    if (categoryFilteredTransactions.length === 0) return [];
+    if (categoryFilteredTransactions.length === 0) {
+      return [];
+    }
 
     if (groupBy === "category") {
-      // Group by category
-      const categoryData: Record<
-        string,
-        { category: string; expenses: number; income: number }
-      > = {};
+      const categoryData: Record<string, number> = {};
 
       categoryFilteredTransactions.forEach((t) => {
-        if (!categoryData[t.category]) {
-          categoryData[t.category] = {
-            category: t.category,
-            expenses: 0,
-            income: 0,
-          };
-        }
-
-        if (t.amount < 0) {
-          categoryData[t.category].expenses += Math.abs(t.amount);
-        } else {
-          categoryData[t.category].income += t.amount;
-        }
+        const amount = Math.abs(t.amount);
+        categoryData[t.category] = (categoryData[t.category] || 0) + amount;
       });
 
-      return Object.values(categoryData).sort((a, b) =>
-        sortOrder === "desc" ? b.expenses - a.expenses : a.expenses - b.expenses
-      );
-    } else {
-      // Group by time period
-      const dateFormat =
-        groupBy === "day"
-          ? "yyyy-MM-dd"
-          : groupBy === "week"
-          ? "yyyy-'W'ww"
-          : "yyyy-MM";
-      const timeData: Record<
-        string,
-        {
-          period: string;
-          expenses: number;
-          income: number;
-          date: Date;
-        }
-      > = {};
-
-      categoryFilteredTransactions.forEach((t) => {
-        const date = new Date(t.date);
-        let period: string;
-
-        if (groupBy === "day") {
-          period = format(date, "yyyy-MM-dd");
-        } else if (groupBy === "week") {
-          period = format(date, "yyyy-'W'ww");
-        } else {
-          period = format(date, "yyyy-MM");
-        }
-
-        if (!timeData[period]) {
-          timeData[period] = {
-            period,
-            expenses: 0,
-            income: 0,
-            date,
-          };
-        }
-
-        if (t.amount < 0) {
-          timeData[period].expenses += Math.abs(t.amount);
-        } else {
-          timeData[period].income += t.amount;
-        }
-      });
-
-      return Object.values(timeData)
-        .sort((a, b) => a.date.getTime() - b.date.getTime())
-        .map((item) => ({
-          ...item,
-          period: formatPeriodLabel(item.date, groupBy, language),
-        }));
+      // Sort categories based on amount
+      return Object.entries(categoryData)
+        .map(([category, amount]) => ({
+          name: getCategoryName(category),
+          value: amount,
+          category,
+        }))
+        .sort((a, b) =>
+          sortOrder === "asc" ? a.value - b.value : b.value - a.value
+        );
     }
-  }, [categoryFilteredTransactions, groupBy, language, sortOrder]);
 
-  // Get category color
-  const getCategoryColor = (categoryId: string): string => {
-    const category = categories.find((c) => c.id === categoryId);
-    return category?.color || "#64748b"; // Default gray
-  };
+    // Group by time period
+    const dateFormat =
+      groupBy === "day"
+        ? "yyyy-MM-dd"
+        : groupBy === "week"
+        ? "yyyy-'W'ww"
+        : "yyyy-MM";
+    const timeData: Record<
+      string,
+      {
+        period: string;
+        expenses: number;
+        income: number;
+        date: Date;
+      }
+    > = {};
 
-  // Get category name
-  const getCategoryName = (categoryId: string): string => {
-    const category = categories.find((c) => c.id === categoryId);
-    return category?.name || categoryId;
-  };
+    categoryFilteredTransactions.forEach((t) => {
+      const date = new Date(t.date);
+      let period: string;
 
-  // Custom formatter for Y-axis (convert to "Tỷ")
-  const formatYAxis = (value: number): string => {
-    if (value >= 1_000_000_000) {
-      return `${(value / 1_000_000_000).toFixed(0)} Tỷ`;
-    } else if (value >= 1_000_000) {
-      return `${(value / 1_000_000).toFixed(0)} Triệu`;
-    } else if (value >= 1_000) {
-      return `${(value / 1_000).toFixed(0)} Nghìn`;
-    }
-    return value.toString();
-  };
+      if (groupBy === "day") {
+        period = format(date, "yyyy-MM-dd");
+      } else if (groupBy === "week") {
+        period = format(date, "yyyy-'W'ww");
+      } else {
+        period = format(date, "yyyy-MM");
+      }
+
+      if (!timeData[period]) {
+        timeData[period] = {
+          period,
+          expenses: 0,
+          income: 0,
+          date,
+        };
+      }
+
+      if (t.amount < 0) {
+        timeData[period].expenses += Math.abs(t.amount);
+      } else {
+        timeData[period].income += t.amount;
+      }
+    });
+
+    return Object.values(timeData)
+      .sort((a, b) => a.date.getTime() - b.date.getTime())
+      .map((item) => ({
+        ...item,
+        period: formatPeriodLabel(item.date, groupBy, language),
+      }));
+  }, [
+    categoryFilteredTransactions,
+    groupBy,
+    language,
+    sortOrder,
+    formatPeriodLabel,
+    getCategoryName,
+  ]);
 
   // Custom tooltip for charts
   const CustomTooltip = React.memo(({ active, payload, label }: any) => {
@@ -350,70 +352,85 @@ export default function SpendingChart({
     );
   });
 
-  // Custom active shape for pie chart
-  const renderActiveShape = (props: any) => {
-    const {
-      cx,
-      cy,
-      innerRadius,
-      outerRadius,
-      startAngle,
-      endAngle,
-      fill,
-      payload,
-      percent,
-      value,
-    } = props;
+  // Tối ưu renderActiveShape
+  const renderActiveShape = useCallback(
+    (props: any) => {
+      const RADIAN = Math.PI / 180;
+      const {
+        cx,
+        cy,
+        midAngle,
+        innerRadius,
+        outerRadius,
+        startAngle,
+        endAngle,
+        fill,
+        payload,
+        percent,
+        value,
+      } = props;
 
-    return (
-      <g>
-        <text
-          x={cx}
-          y={cy}
-          dy={-20}
-          textAnchor="middle"
-          className="text-sm font-medium text-foreground"
-        >
-          {payload.category}
-        </text>
-        <text
-          x={cx}
-          y={cy}
-          textAnchor="middle"
-          className="text-lg font-bold text-foreground"
-        >
-          {formatCurrency(value, currency, exchangeRates, "VND")}
-        </text>
-        <text
-          x={cx}
-          y={cy}
-          dy={20}
-          textAnchor="middle"
-          className="text-xs text-muted-foreground"
-        >
-          {`${(percent * 100).toFixed(1)}%`}
-        </text>
-        <Sector
-          cx={cx}
-          cy={cy}
-          innerRadius={innerRadius}
-          outerRadius={outerRadius + 6}
-          startAngle={startAngle}
-          endAngle={endAngle}
-          fill={fill}
-        />
-        <Sector
-          cx={cx}
-          cy={cy}
-          startAngle={startAngle}
-          endAngle={endAngle}
-          innerRadius={outerRadius + 6}
-          outerRadius={outerRadius + 10}
-          fill={fill}
-        />
-      </g>
-    );
-  };
+      const sin = Math.sin(-RADIAN * midAngle);
+      const cos = Math.cos(-RADIAN * midAngle);
+      const sx = cx + (outerRadius + 10) * cos;
+      const sy = cy + (outerRadius + 10) * sin;
+      const mx = cx + (outerRadius + 30) * cos;
+      const my = cy + (outerRadius + 30) * sin;
+      const ex = mx + (cos >= 0 ? 1 : -1) * 22;
+      const ey = my;
+      const textAnchor = cos >= 0 ? "start" : "end";
+
+      return (
+        <g>
+          <text
+            x={cx}
+            y={cy}
+            dy={-20}
+            textAnchor="middle"
+            className="text-sm font-medium text-foreground"
+          >
+            {payload.category}
+          </text>
+          <text
+            x={cx}
+            y={cy}
+            textAnchor="middle"
+            className="text-lg font-bold text-foreground"
+          >
+            {formatCurrency(value, currency, exchangeRates, "VND")}
+          </text>
+          <text
+            x={cx}
+            y={cy}
+            dy={20}
+            textAnchor="middle"
+            className="text-xs text-muted-foreground"
+          >
+            {`${(percent * 100).toFixed(1)}%`}
+          </text>
+          <Sector
+            cx={cx}
+            cy={cy}
+            innerRadius={innerRadius}
+            outerRadius={outerRadius + 6}
+            startAngle={startAngle}
+            endAngle={endAngle}
+            fill={fill}
+          />
+          <Sector
+            cx={cx}
+            cy={cy}
+            startAngle={startAngle}
+            endAngle={endAngle}
+            innerRadius={outerRadius + 6}
+            outerRadius={outerRadius + 10}
+            fill={fill}
+          />
+        </g>
+      );
+    },
+    [formatCurrency, currency, exchangeRates]
+  );
 
   // Handle pie chart hover
   const onPieEnter = useCallback((_: any, index: number) => {

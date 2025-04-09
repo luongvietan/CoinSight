@@ -23,18 +23,18 @@ const useMockAPI =
   process.env.USE_MOCK_API === "true" || !process.env.NEXT_PUBLIC_SITE_URL;
 
 // Thông báo kiểu kiểm thử
-console.log("\n======= KIỂM THỬ TỔNG HỢP COINSIGHT =======");
-console.log(
-  `Chế độ kiểm thử: ${
-    useMockAuth && useMockData ? "Dữ liệu mô phỏng" : "Dữ liệu thật"
-  }`
-);
-console.log("==========================================\n");
+// console.log("\n======= KIỂM THỬ TỔNG HỢP COINSIGHT =======");
+// console.log(
+//   `Chế độ kiểm thử: ${
+//     useMockAuth && useMockData ? "Dữ liệu mô phỏng" : "Dữ liệu thật"
+//   }`
+// );
+// console.log("==========================================\n");
 
 async function runTests() {
   try {
     // 1. Kiểm thử xác thực
-    console.log("\n------ KIỂM THỬ XÁC THỰC ------");
+    // console.log("\n------ KIỂM THỬ XÁC THỰC ------");
     if (useMockAuth) {
       await mockAuthTest();
     } else {
@@ -42,7 +42,7 @@ async function runTests() {
     }
 
     // 2. Kiểm thử Firestore
-    console.log("\n------ KIỂM THỬ FIRESTORE ------");
+    // console.log("\n------ KIỂM THỬ FIRESTORE ------");
     if (useMockData) {
       await mockFirestoreTest();
     } else {
@@ -50,7 +50,7 @@ async function runTests() {
     }
 
     // 3. Kiểm thử API
-    console.log("\n------ KIỂM THỬ API ------");
+    // console.log("\n------ KIỂM THỬ API ------");
     if (useMockAPI) {
       await mockAPITest();
     } else {
@@ -58,7 +58,7 @@ async function runTests() {
     }
 
     // 4. Kiểm thử hiệu năng
-    console.log("\n------ KIỂM THỬ HIỆU NĂNG ------");
+    // console.log("\n------ KIỂM THỬ HIỆU NĂNG ------");
     if (useMockData) {
       await mockPerformanceTest();
     } else {
@@ -66,7 +66,7 @@ async function runTests() {
     }
 
     // 5. Kiểm thử tích hợp
-    console.log("\n------ KIỂM THỬ TÍCH HỢP ------");
+    // console.log("\n------ KIỂM THỬ TÍCH HỢP ------");
     if (useMockData) {
       await mockIntegrationTest();
     } else {
@@ -74,12 +74,12 @@ async function runTests() {
     }
 
     // Thông báo kết quả
-    console.log("\n======= KẾT QUẢ KIỂM THỬ =======");
-    console.log("✅ Tất cả các kiểm thử đã hoàn thành thành công!");
-    console.log("===================================\n");
+    // console.log("\n======= KẾT QUẢ KIỂM THỬ =======");
+    // console.log("✅ Tất cả các kiểm thử đã hoàn thành thành công!");
+    // console.log("===================================\n");
   } catch (error) {
-    console.error("\n❌ CÓ LỖI XẢY RA TRONG QUÁ TRÌNH KIỂM THỬ:");
-    console.error(error);
+    // console.error("\n❌ CÓ LỖI XẢY RA TRONG QUÁ TRÌNH KIỂM THỬ:");
+    // console.error(error);
     process.exit(1);
   }
 }

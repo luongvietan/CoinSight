@@ -1,105 +1,159 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/firebase/config";
-import { doc, getDoc } from "firebase/firestore";
-import OpenAI from "openai";
+import type { NextRequest } from "next/server";
+import { auth } from "@/lib/firebase/config";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { description, userId } = body;
-
-    if (!description || !userId) {
+    // Kiểm tra xác thực
+    const idToken = request.headers.get("Authorization")?.split("Bearer ")[1];
+    if (!idToken) {
       return NextResponse.json(
-        { error: "Missing required fields" },
+        { error: "Unauthorized: Missing token" },
+        { status: 401 }
+      );
+    }
+
+    const { description } = await request.json();
+
+    if (!description) {
+      return NextResponse.json(
+        { error: "Description is required" },
         { status: 400 }
       );
     }
 
-    // Lấy danh mục của người dùng từ Firestore
-    const userDoc = await getDoc(doc(db, "users", userId));
+    // Sử dụng phân loại trực tiếp thay vì gọi đến API HuggingFace
+    const lowerDesc = description.toLowerCase();
+    const category = fallbackClassify(lowerDesc);
 
-    if (!userDoc.exists()) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
+    console.log(
+      `[Classify] Phân loại "${description}" thành danh mục: ${category}`
+    );
 
-    const userData = userDoc.data();
-    const userCategories = userData.categories || [
-      "food",
-      "shopping",
-      "bills",
-      "entertainment",
-      "other",
-    ];
-
-    // Gửi yêu cầu phân loại đến OpenAI
-    const prompt = `Phân loại "${description}" vào 1 trong ${
-      userCategories.length
-    } nhóm: 
-    [${userCategories.join(", ")}]. Chỉ trả lời bằng 1 từ.`;
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
-
-    try {
-      const response = await openai.chat.completions.create(
-        {
-          model: "gpt-3.5-turbo",
-          messages: [{ role: "user", content: prompt }],
-          temperature: 0.7,
-        },
-        { signal: controller.signal }
-      );
-
-      clearTimeout(timeoutId);
-
-      const category = response.choices[0].message.content?.trim();
-
-      // Kiểm tra xem danh mục trả về có nằm trong danh sách danh mục của người dùng không
-      const finalCategory = userCategories.includes(category || "")
-        ? category
-        : "other";
-
-      return NextResponse.json({ category: finalCategory });
-    } catch (error) {
-      if (error.name === "AbortError") {
-        console.log("Request timed out");
-        return NextResponse.json({ category: "other" });
-      }
-      console.error("Error classifying transaction:", error);
-      return NextResponse.json(
-        { error: "Failed to classify transaction" },
-        { status: 500 }
-      );
-    }
+    return NextResponse.json({ category });
   } catch (error) {
     console.error("Error classifying transaction:", error);
     return NextResponse.json(
-      { error: "Failed to classify transaction" },
+      { error: "Error classifying transaction", category: "other" },
       { status: 500 }
     );
   }
 }
-export async function deleteOldTransactions(userId) {
-  const oneYearAgo = new Date();
-  oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
 
-  const q = query(
-    collection(db, "transactions"),
-    where("userId", "==", userId),
-    where("date", "<", oneYearAgo)
-  );
-
-  const snapshot = await getDocs(q);
-
-  // Xóa theo batch để tối ưu
-  const batch = db.batch();
-  snapshot.docs.forEach((doc) => {
-    batch.delete(doc.ref);
-  });
-
-  return batch.commit();
+// Hàm phân loại dự phòng khi API lỗi
+function fallbackClassify(lowerDesc: string): string {
+  if (
+    lowerDesc.includes("coffee") ||
+    lowerDesc.includes("starbucks") ||
+    lowerDesc.includes("ăn") ||
+    lowerDesc.includes("restaurant") ||
+    lowerDesc.includes("lunch") ||
+    lowerDesc.includes("dinner")
+  ) {
+    return "food";
+  } else if (
+    lowerDesc.includes("grocery") ||
+    lowerDesc.includes("supermarket") ||
+    lowerDesc.includes("thực phẩm")
+  ) {
+    return "groceries";
+  } else if (
+    lowerDesc.includes("quần") ||
+    lowerDesc.includes("áo") ||
+    lowerDesc.includes("clothes") ||
+    lowerDesc.includes("shirt") ||
+    lowerDesc.includes("pants")
+  ) {
+    return "clothing";
+  } else if (
+    lowerDesc.includes("laptop") ||
+    lowerDesc.includes("phone") ||
+    lowerDesc.includes("điện thoại") ||
+    lowerDesc.includes("máy tính")
+  ) {
+    return "electronics";
+  } else if (
+    lowerDesc.includes("điện") ||
+    lowerDesc.includes("nước") ||
+    lowerDesc.includes("bill") ||
+    lowerDesc.includes("utility")
+  ) {
+    return "bills";
+  } else if (
+    lowerDesc.includes("rent") ||
+    lowerDesc.includes("thuê nhà") ||
+    lowerDesc.includes("mortgage")
+  ) {
+    return "rent";
+  } else if (
+    lowerDesc.includes("taxi") ||
+    lowerDesc.includes("bus") ||
+    lowerDesc.includes("train") ||
+    lowerDesc.includes("xe")
+  ) {
+    return "transportation";
+  } else if (
+    lowerDesc.includes("doctor") ||
+    lowerDesc.includes("hospital") ||
+    lowerDesc.includes("medicine") ||
+    lowerDesc.includes("bệnh")
+  ) {
+    return "healthcare";
+  } else if (
+    lowerDesc.includes("school") ||
+    lowerDesc.includes("tuition") ||
+    lowerDesc.includes("học")
+  ) {
+    return "education";
+  } else if (
+    lowerDesc.includes("phim") ||
+    lowerDesc.includes("game") ||
+    lowerDesc.includes("chơi") ||
+    lowerDesc.includes("movie")
+  ) {
+    return "entertainment";
+  } else if (
+    lowerDesc.includes("travel") ||
+    lowerDesc.includes("hotel") ||
+    lowerDesc.includes("flight") ||
+    lowerDesc.includes("du lịch")
+  ) {
+    return "travel";
+  } else if (
+    lowerDesc.includes("gift") ||
+    lowerDesc.includes("present") ||
+    lowerDesc.includes("quà")
+  ) {
+    return "gifts";
+  } else if (
+    lowerDesc.includes("gym") ||
+    lowerDesc.includes("fitness") ||
+    lowerDesc.includes("thể dục")
+  ) {
+    return "fitness";
+  } else if (
+    lowerDesc.includes("netflix") ||
+    lowerDesc.includes("spotify") ||
+    lowerDesc.includes("subscription")
+  ) {
+    return "subscriptions";
+  } else if (lowerDesc.includes("salary") || lowerDesc.includes("lương")) {
+    return "salary";
+  } else if (lowerDesc.includes("freelance") || lowerDesc.includes("tự do")) {
+    return "freelance";
+  } else if (
+    lowerDesc.includes("investment") ||
+    lowerDesc.includes("stock") ||
+    lowerDesc.includes("đầu tư")
+  ) {
+    return "investments";
+  } else if (
+    lowerDesc.includes("mua") ||
+    lowerDesc.includes("buy") ||
+    lowerDesc.includes("purchase")
+  ) {
+    return "shopping";
+  } else {
+    return "other";
+  }
 }

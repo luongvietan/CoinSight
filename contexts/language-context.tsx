@@ -177,21 +177,33 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
             setLastUpdated(storedTime);
           } else {
             // Rates are too old, fetch new ones using requestIdleCallback or setTimeout
-            "requestIdleCallback" in window
-              ? window.requestIdleCallback(() => refreshRates())
-              : setTimeout(() => refreshRates(), 1000); // Longer delay to reduce initial load
+            if (typeof window !== "undefined") {
+              if ("requestIdleCallback" in window) {
+                window.requestIdleCallback(() => refreshRates());
+              } else {
+                setTimeout(() => refreshRates(), 1000);
+              }
+            }
           }
         } catch (e) {
           // Use request idle callback to defer fetch after critical rendering
-          "requestIdleCallback" in window
-            ? window.requestIdleCallback(() => refreshRates())
-            : setTimeout(() => refreshRates(), 1000);
+          if (typeof window !== "undefined") {
+            if ("requestIdleCallback" in window) {
+              window.requestIdleCallback(() => refreshRates());
+            } else {
+              setTimeout(() => refreshRates(), 1000);
+            }
+          }
         }
       } else {
         // No stored rates, fetch new ones with lower priority
-        "requestIdleCallback" in window
-          ? window.requestIdleCallback(() => refreshRates())
-          : setTimeout(() => refreshRates(), 1000);
+        if (typeof window !== "undefined") {
+          if ("requestIdleCallback" in window) {
+            window.requestIdleCallback(() => refreshRates());
+          } else {
+            setTimeout(() => refreshRates(), 1000);
+          }
+        }
       }
 
       // Try to get language from localStorage

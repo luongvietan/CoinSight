@@ -185,7 +185,10 @@ export const en = {
     viewTransactions: "View transaction details for the selected date.",
   },
   aiInsights: {
-    title: "AI Suggestions",
+    title: "AI Insights",
+    localModelInfo:
+      "Using local Ollama Model. Make sure Ollama is running on your machine.",
+    retryButton: "Refresh",
     budgetUsage: "Budget Usage",
     noInsights:
       "No insights available. Add more transactions to get personalized insights.",

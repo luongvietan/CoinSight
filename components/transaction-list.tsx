@@ -1,8 +1,10 @@
 //transaction-list.tsx :
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, memo, useCallback } from "react";
 import type React from "react";
+import { FixedSizeList as List } from "react-window";
+import AutoSizer from "react-virtualized-auto-sizer";
 
 import {
   ShoppingBag,
@@ -25,7 +27,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import type { Transaction } from "@/types/transaction";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate, debounce } from "@/lib/utils";
 import { useLanguage } from "@/contexts/language-context";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -112,7 +114,188 @@ const categoryColors: Record<string, string> = {
 
 type SortOption = "date-desc" | "date-asc" | "amount-desc" | "amount-asc";
 
-export default function TransactionList({
+// Chuyển thành các component memoized riêng biệt
+const TransactionItem = memo(
+  ({
+    transaction,
+    language,
+    currency,
+    exchangeRates,
+  }: {
+    transaction: Transaction;
+    language: string;
+    currency: string;
+    exchangeRates: Record<string, number>;
+  }) => {
+    const formattedAmount = formatCurrency(
+      transaction.amount,
+      currency,
+      exchangeRates
+    );
+    const formattedDate = formatDate(transaction.date, language);
+    const isIncome = transaction.amount > 0;
+    const colorClass = isIncome ? "text-green-600" : "text-red-600";
+    const sign = isIncome ? "+" : "";
+
+    const category = transaction.category || "other";
+    const categoryColorClass =
+      categoryColors[category.toLowerCase()] || categoryColors.other;
+    const CategoryIcon =
+      categoryIcons[category.toLowerCase()] || categoryIcons.other;
+
+    return (
+      <div className="flex items-center justify-between p-2 hover:bg-muted/50 rounded-md transition-colors">
+        <div className="flex items-center gap-3">
+          <div
+            className={`h-10 w-10 rounded-full flex items-center justify-center ${
+              categoryColorClass.split(" ")[0]
+            }`}
+          >
+            {CategoryIcon}
+          </div>
+          <div>
+            <p className="font-medium line-clamp-1">
+              {transaction.description}
+            </p>
+            <Badge variant="outline" className={categoryColorClass}>
+              {transaction.category || "Other"}
+            </Badge>
+            <p className="text-sm text-muted-foreground">{formattedDate}</p>
+          </div>
+        </div>
+        <div className={`font-medium ${colorClass}`}>
+          {sign}
+          {formattedAmount}
+        </div>
+      </div>
+    );
+  }
+);
+TransactionItem.displayName = "TransactionItem";
+
+// Virtual item renderer for react-window
+const VirtualRow = memo(({ index, style, data }: any) => {
+  const { transactions, language, currency, exchangeRates } = data;
+  const transaction = transactions[index];
+
+  return (
+    <div style={style}>
+      <TransactionItem
+        transaction={transaction}
+        language={language}
+        currency={currency}
+        exchangeRates={exchangeRates}
+      />
+    </div>
+  );
+});
+VirtualRow.displayName = "VirtualRow";
+
+// Tạo component TransactionFilter riêng biệt và memo
+const TransactionFilter = memo(
+  ({
+    searchTerm,
+    setSearchTerm,
+    categoryFilter,
+    setCategoryFilter,
+    sortBy,
+    setSortBy,
+    categories,
+    resetFilters,
+  }: {
+    searchTerm: string;
+    setSearchTerm: (value: string) => void;
+    categoryFilter: string;
+    setCategoryFilter: (value: string) => void;
+    sortBy: SortOption;
+    setSortBy: (value: SortOption) => void;
+    categories: string[];
+    resetFilters: () => void;
+  }) => {
+    // Thêm debounce cho search để tránh rerender quá nhiều
+    const debouncedSearch = useMemo(
+      () => debounce((value: string) => setSearchTerm(value), 300),
+      [setSearchTerm]
+    );
+
+    const handleSearchChange = useCallback(
+      (e: React.ChangeEvent<HTMLInputElement>) => {
+        debouncedSearch(e.target.value);
+      },
+      [debouncedSearch]
+    );
+
+    return (
+      <div className="mb-4 space-y-2">
+        <div className="flex flex-col sm:flex-row gap-2">
+          <div className="relative flex-grow">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Tìm kiếm giao dịch..."
+              className="pl-8"
+              defaultValue={searchTerm}
+              onChange={handleSearchChange}
+            />
+          </div>
+          <div className="flex gap-2">
+            <Select
+              value={categoryFilter}
+              onValueChange={(value) => setCategoryFilter(value)}
+            >
+              <SelectTrigger className="w-[160px]">
+                <SelectValue placeholder="Danh mục" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả danh mục</SelectItem>
+                {categories.map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {category}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <ArrowUpDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuGroup>
+                  <DropdownMenuItem onClick={() => setSortBy("date-desc")}>
+                    Mới nhất trước
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSortBy("date-asc")}>
+                    Cũ nhất trước
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSortBy("amount-desc")}>
+                    Giá trị cao nhất
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSortBy("amount-asc")}>
+                    Giá trị thấp nhất
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={resetFilters}
+              title="Đặt lại bộ lọc"
+            >
+              <Filter className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+);
+TransactionFilter.displayName = "TransactionFilter";
+
+function TransactionList({
   transactions,
   isLoading,
   pageSize = 10,
@@ -121,25 +304,34 @@ export default function TransactionList({
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<SortOption>("date-desc");
-  const [visibleCount, setVisibleCount] = useState(pageSize);
 
-  // Get unique categories from transactions
+  // Get unique categories from transactions - memoized
   const categories = useMemo(() => {
+    if (transactions.length === 0) return [];
+
     const uniqueCategories = new Set<string>();
     transactions.forEach((transaction) => {
-      uniqueCategories.add(transaction.category);
+      if (transaction.category) {
+        uniqueCategories.add(transaction.category);
+      }
     });
     return Array.from(uniqueCategories).sort();
   }, [transactions]);
 
   // Filter and sort transactions
   const filteredAndSortedTransactions = useMemo(() => {
+    // Nếu không có bộ lọc nào được áp dụng, trả về mảng gốc để tránh tạo mảng mới
+    if (!searchTerm && categoryFilter === "all" && sortBy === "date-desc") {
+      return transactions;
+    }
+
     let result = [...transactions];
 
     // Apply search filter
     if (searchTerm) {
+      const searchTermLower = searchTerm.toLowerCase();
       result = result.filter((transaction) =>
-        transaction.description.toLowerCase().includes(searchTerm.toLowerCase())
+        transaction.description.toLowerCase().includes(searchTermLower)
       );
     }
 
@@ -169,20 +361,11 @@ export default function TransactionList({
     return result;
   }, [transactions, searchTerm, categoryFilter, sortBy]);
 
-  // Get visible transactions based on current page size
-  const visibleTransactions = useMemo(() => {
-    return filteredAndSortedTransactions.slice(0, visibleCount);
-  }, [filteredAndSortedTransactions, visibleCount]);
-
-  const handleLoadMore = () => {
-    setVisibleCount((prev) => prev + pageSize);
-  };
-
-  const resetFilters = () => {
+  const resetFilters = useCallback(() => {
     setSearchTerm("");
     setCategoryFilter("all");
     setSortBy("date-desc");
-  };
+  }, []);
 
   if (isLoading) {
     return (
@@ -205,155 +388,62 @@ export default function TransactionList({
 
   if (transactions.length === 0) {
     return (
-      <div className="text-center py-8 text-muted-foreground">
-        No transactions found. Add your first transaction!
+      <div className="flex flex-col items-center justify-center py-8 text-center">
+        <CreditCard className="h-12 w-12 text-muted-foreground mb-4" />
+        <h3 className="font-medium text-lg mb-1">Không có giao dịch nào</h3>
+        <p className="text-muted-foreground">
+          Bạn chưa có giao dịch nào. Hãy thêm giao dịch mới để bắt đầu.
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      {/* Search and Filter Controls */}
-      <div className="flex flex-col sm:flex-row gap-2 mb-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search transactions..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-8"
-          />
-        </div>
+    <div>
+      <TransactionFilter
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        categoryFilter={categoryFilter}
+        setCategoryFilter={setCategoryFilter}
+        sortBy={sortBy}
+        setSortBy={setSortBy}
+        categories={categories}
+        resetFilters={resetFilters}
+      />
 
-        <div className="flex gap-2">
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All categories</SelectItem>
-              {categories.map((category) => (
-                <SelectItem key={category} value={category}>
-                  {category}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="flex gap-1 items-center">
-                <ArrowUpDown className="h-4 w-4" />
-                <span className="hidden sm:inline">Sort</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuGroup>
-                <DropdownMenuItem onClick={() => setSortBy("date-desc")}>
-                  Newest first
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSortBy("date-asc")}>
-                  Oldest first
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSortBy("amount-desc")}>
-                  Highest amount
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSortBy("amount-asc")}>
-                  Lowest amount
-                </DropdownMenuItem>
-              </DropdownMenuGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          {(searchTerm ||
-            categoryFilter !== "all" ||
-            sortBy !== "date-desc") && (
-            <Button variant="ghost" onClick={resetFilters} className="gap-1">
-              <Filter className="h-4 w-4" />
-              Reset
-            </Button>
-          )}
-        </div>
-      </div>
-
-      {/* Transaction List */}
-      <AnimatePresence>
-        {visibleTransactions.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            No transactions match your filters
-          </div>
-        ) : (
-          visibleTransactions.map((transaction) => (
-            <motion.div
-              key={transaction.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, height: 0 }}
-              whileHover={{ scale: 1.01 }}
-              transition={{ duration: 0.2 }}
-              className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors"
-              tabIndex={0}
-              role="button"
-              aria-label={`${transaction.description}, ${formatCurrency(
-                transaction.amount,
-                currency,
-                exchangeRates
-              )}, Category: ${transaction.category}`}
-            >
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
-                  {categoryIcons[transaction.category] || categoryIcons.other}
-                </div>
-                <div>
-                  <div className="font-medium">{transaction.description}</div>
-                  <div className="text-sm text-muted-foreground">
-                    {formatDate(transaction.date, language)}
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge
-                  variant="outline"
-                  className={
-                    categoryColors[transaction.category] || categoryColors.other
-                  }
-                >
-                  {transaction.category}
-                </Badge>
-                <span
-                  className={
-                    transaction.amount < 0
-                      ? "text-destructive font-medium"
-                      : "text-primary font-medium"
-                  }
-                >
-                  {formatCurrency(transaction.amount, currency, exchangeRates)}
-                </span>
-              </div>
-            </motion.div>
-          ))
-        )}
-      </AnimatePresence>
-
-      {/* Load More Button */}
-      {visibleTransactions.length < filteredAndSortedTransactions.length && (
-        <div className="flex justify-center mt-4">
-          <Button
-            variant="outline"
-            onClick={handleLoadMore}
-            className="flex items-center gap-1"
-          >
-            Load More
-            <ChevronDown className="h-4 w-4" />
+      {filteredAndSortedTransactions.length === 0 ? (
+        <div className="text-center py-6">
+          <p className="text-muted-foreground">
+            Không tìm thấy giao dịch nào phù hợp với bộ lọc của bạn.
+          </p>
+          <Button variant="link" onClick={resetFilters} className="mt-2">
+            Đặt lại bộ lọc
           </Button>
         </div>
+      ) : (
+        <div className="h-[400px] w-full">
+          <AutoSizer>
+            {({ height, width }) => (
+              <List
+                height={height}
+                width={width}
+                itemCount={filteredAndSortedTransactions.length}
+                itemSize={70}
+                itemData={{
+                  transactions: filteredAndSortedTransactions,
+                  language,
+                  currency,
+                  exchangeRates,
+                }}
+              >
+                {VirtualRow}
+              </List>
+            )}
+          </AutoSizer>
+        </div>
       )}
-
-      {/* Results Summary */}
-      <div className="text-sm text-muted-foreground text-center mt-2">
-        Showing {visibleTransactions.length} of{" "}
-        {filteredAndSortedTransactions.length} transactions
-      </div>
     </div>
   );
 }
+
+export default memo(TransactionList);

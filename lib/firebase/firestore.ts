@@ -57,7 +57,6 @@ export const addTransaction = async (transaction: Omit<Transaction, "id">) => {
     });
     return { id: docRef.id, ...transaction };
   } catch (error) {
-    console.error("Lỗi thêm giao dịch:", error);
     throw error;
   }
 };
@@ -73,7 +72,6 @@ export const getTransaction = async (id: string) => {
       throw new Error("Không tìm thấy giao dịch");
     }
   } catch (error) {
-    console.error("Lỗi lấy giao dịch:", error);
     throw error;
   }
 };
@@ -102,8 +100,6 @@ export const getUserTransactions = async (userId: string, limitCount = 50) => {
 
       return transactions;
     } catch (indexError) {
-      console.warn("Lỗi index, sử dụng phương pháp thay thế:", indexError);
-
       // Phương pháp thay thế không sử dụng orderBy để tránh lỗi index
       // Lưu ý: Transactions sẽ không được sắp xếp theo thời gian
       const q = query(
@@ -131,7 +127,6 @@ export const getUserTransactions = async (userId: string, limitCount = 50) => {
       });
     }
   } catch (error) {
-    console.error("Lỗi lấy danh sách giao dịch:", error);
     // Tạm thời trả về mảng rỗng để tránh crash ứng dụng
     return [];
   }
@@ -146,7 +141,6 @@ export const updateTransaction = async (
     await updateDoc(docRef, data);
     return { id, ...data };
   } catch (error) {
-    console.error("Lỗi cập nhật giao dịch:", error);
     throw error;
   }
 };
@@ -157,7 +151,6 @@ export const deleteTransaction = async (id: string) => {
     await deleteDoc(docRef);
     return true;
   } catch (error) {
-    console.error("Lỗi xóa giao dịch:", error);
     throw error;
   }
 };
@@ -168,7 +161,6 @@ export const addBudget = async (budget: Omit<Budget, "id">) => {
     const docRef = await addDoc(collection(db, "budgets"), budget);
     return { id: docRef.id, ...budget };
   } catch (error) {
-    console.error("Lỗi thêm ngân sách:", error);
     throw error;
   }
 };
@@ -186,7 +178,6 @@ export const getUserBudgets = async (userId: string) => {
 
     return budgets;
   } catch (error) {
-    console.error("Lỗi lấy danh sách ngân sách:", error);
     throw error;
   }
 };
@@ -197,7 +188,6 @@ export const updateBudget = async (id: string, data: Partial<Budget>) => {
     await updateDoc(docRef, data);
     return { id, ...data };
   } catch (error) {
-    console.error("Lỗi cập nhật ngân sách:", error);
     throw error;
   }
 };
@@ -208,7 +198,6 @@ export const deleteBudget = async (id: string) => {
     await deleteDoc(docRef);
     return true;
   } catch (error) {
-    console.error("Lỗi xóa ngân sách:", error);
     throw error;
   }
 };
@@ -225,7 +214,6 @@ export const getUser = async (userId: string) => {
       throw new Error("Không tìm thấy người dùng");
     }
   } catch (error) {
-    console.error("Lỗi lấy thông tin người dùng:", error);
     throw error;
   }
 };
@@ -258,7 +246,6 @@ export const updateUser = async (userId: string, data: Partial<User>) => {
 
     return { id: userId, ...data };
   } catch (error) {
-    console.error("Lỗi cập nhật thông tin người dùng:", error);
     throw error;
   }
 };

@@ -1,24 +1,20 @@
-"use client";
-
 import type React from "react";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "@/components/theme-provider";
-import { LanguageProvider } from "@/contexts/language-context";
-import { AuthProvider } from "@/contexts/auth-context";
-import { CustomToaster } from "@/components/ui/custom-toast";
 import { cn } from "@/lib/utils";
+import { Providers } from "@/components/providers";
+import { ReactNode } from "react";
 
 const inter = Inter({ subsets: ["latin"] });
 
-// Metadata không thể được sử dụng trong Client Component
-// export const metadata: Metadata = {
-//   title: "CoinSight - AI-Powered Finance Management",
-//   description: "Manage your personal finances with AI insights",
-//   generator: "v0.dev",
-// };
+export const metadata: Metadata = {
+  title: "CoinSight - AI-Powered Finance Management",
+  description: "Manage your personal finances with AI insights",
+  generator: "v0.dev",
+};
 
+// Server Component
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -39,19 +35,7 @@ export default function RootLayout({
           inter.className
         )}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <LanguageProvider>
-            <AuthProvider>
-              <CustomToaster />
-              {children}
-            </AuthProvider>
-          </LanguageProvider>
-        </ThemeProvider>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
