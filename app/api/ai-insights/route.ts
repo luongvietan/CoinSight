@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { auth } from "@/lib/firebase/config";
 
 // Tăng thời gian timeout cho API route
-export const maxDuration = 180; // Giảm xuống 3 phút thay vì 5 phút
+export const maxDuration = 60; // Giảm xuống 60 giây theo giới hạn của Vercel Hobby
 // Không cache kết quả
 export const dynamic = "force-dynamic";
 
