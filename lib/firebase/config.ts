@@ -21,6 +21,12 @@ const firebaseConfig = {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
 const auth = getAuth(app);
 
+// Sử dụng getFirestore thay vì initializeFirestore để tránh lỗi khởi tạo nhiều lần
+const db = getFirestore(app);
+
+const functions = getFunctions(app);
+const storage = getStorage(app);
+
 // Tạo Firestore với cấu hình nâng cao để khắc phục lỗi ERR_QUIC_PROTOCOL_ERROR
 // Removed duplicate declaration of db
 
@@ -28,9 +34,6 @@ const auth = getAuth(app);
 const db = initializeFirestore(app, {
   experimentalForceLongPolling: true, // Sử dụng long polling thay vì WebChannel (QUIC)
 });
-
-const functions = getFunctions(app);
-const storage = getStorage(app);
 
 // Sử dụng Firebase Emulator trong môi trường development
 if (
