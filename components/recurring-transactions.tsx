@@ -89,6 +89,29 @@ export default function RecurringTransactions({
 
   const handleSaveRecurring = () => {
     const amount = Number(formData.amount);
+
+    // Tính toán nextDate dựa trên frequency
+    const startDate = new Date(formData.nextDate);
+    let nextDate = new Date(startDate);
+
+    // Nếu đang thêm mới, tự động tính toán ngày giao dịch tiếp theo dựa trên frequency
+    if (!editingRecurring) {
+      switch (formData.frequency) {
+        case "daily":
+          nextDate.setDate(nextDate.getDate() + 1);
+          break;
+        case "weekly":
+          nextDate.setDate(nextDate.getDate() + 7);
+          break;
+        case "monthly":
+          nextDate.setMonth(nextDate.getMonth() + 1);
+          break;
+        case "yearly":
+          nextDate.setFullYear(nextDate.getFullYear() + 1);
+          break;
+      }
+    }
+
     const newRecurring: RecurringTransaction = {
       id: editingRecurring ? editingRecurring.id : Date.now().toString(),
       description: formData.description,
@@ -100,7 +123,9 @@ export default function RecurringTransactions({
         | "weekly"
         | "monthly"
         | "yearly",
-      nextDate: formData.nextDate,
+      nextDate: !editingRecurring
+        ? nextDate.toISOString().split("T")[0]
+        : formData.nextDate,
       isActive: formData.isActive,
     };
 
