@@ -73,7 +73,7 @@ export default function BudgetTracking({
   const { language, translations } = useLanguage();
   const t = translations[language];
   const { toast } = useToast();
-  const [budgets, setBudgets] = useState<Budget[]>(initialBudgets);
+  const [budgets, setBudgets] = useState<Budget[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [budgetAmount, setBudgetAmount] = useState("");
@@ -85,31 +85,10 @@ export default function BudgetTracking({
   const [budgetToDelete, setBudgetToDelete] = useState<Budget | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // Cập nhật budgets khi initialBudgets thay đổi
+  // Cập nhật budgets từ initialBudgets (props)
   useEffect(() => {
-    setBudgets(initialBudgets);
+    setBudgets(initialBudgets || []);
   }, [initialBudgets]);
-
-  // Tải lại ngân sách từ Firebase khi refreshKey thay đổi
-  useEffect(() => {
-    const loadBudgets = async () => {
-      if (!auth.currentUser) return;
-
-      try {
-        const loadedBudgets = await getUserBudgets(auth.currentUser.uid);
-        setBudgets(loadedBudgets);
-      } catch (error) {
-        console.error("Lỗi khi tải ngân sách:", error);
-        toast({
-          title: t.common.error,
-          description: t.common.errorLoadingData,
-          variant: "destructive",
-        });
-      }
-    };
-
-    loadBudgets();
-  }, [refreshKey, toast, t.common.error, t.common.errorLoadingData]);
 
   // Tính toán chi tiêu theo danh mục
   const getCategorySpending = (category: string) => {
@@ -189,7 +168,6 @@ export default function BudgetTracking({
 
       // Đóng dialog và làm mới danh sách ngân sách
       setIsDialogOpen(false);
-      setRefreshKey((prev) => prev + 1);
 
       // Thông báo cho component cha nếu có callback
       if (editingBudgetId) {
@@ -222,7 +200,6 @@ export default function BudgetTracking({
       // Đóng dialog và làm mới danh sách ngân sách
       setIsDeleteDialogOpen(false);
       setBudgetToDelete(null);
-      setRefreshKey((prev) => prev + 1);
 
       // Thông báo cho component cha nếu có callback
       if (budgetToDelete && budgetToDelete.id) {

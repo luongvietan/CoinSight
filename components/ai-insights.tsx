@@ -17,6 +17,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { getAiInsights, fetchBudgets } from "@/lib/api";
 import { useLanguage } from "@/contexts/language-context";
 import { debounce } from "@/lib/utils";
+import BudgetUsage from "./budget-usage";
 
 interface AiInsightsProps {
   transactions: Transaction[];
@@ -445,10 +446,7 @@ function AiInsights({ transactions, isLoading }: AiInsightsProps) {
       </div>
 
       {categorySpending.length > 0 && (
-        <div>
-          <h3 className="font-medium mb-3">Budget Usage</h3>
-          {budgetList}
-        </div>
+        <BudgetUsage transactions={transactions} isLoading={isLoading} />
       )}
     </div>
   );
