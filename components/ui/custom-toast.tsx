@@ -19,22 +19,40 @@ export function CustomToaster() {
             return (
               <motion.div
                 key={id}
-                initial={{ opacity: 0, y: 50, scale: 0.8 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2 } }}
-                transition={{ type: "spring", damping: 20, stiffness: 300 }}
+                initial={{ opacity: 0, y: 50, scale: 0.8, filter: "blur(8px)" }}
+                animate={{
+                  opacity: 1,
+                  y: 0,
+                  scale: 1,
+                  filter: "blur(0px)",
+                  transition: {
+                    type: "spring",
+                    damping: 25,
+                    stiffness: 300,
+                    duration: 0.4,
+                  },
+                }}
+                exit={{
+                  opacity: 0,
+                  x: 100,
+                  filter: "blur(8px)",
+                  transition: {
+                    duration: 0.3,
+                    ease: "easeOut",
+                  },
+                }}
                 className={cn(
-                  "group pointer-events-auto relative mb-2 flex w-full overflow-hidden rounded-lg border p-4 pr-8 shadow-lg",
+                  "group pointer-events-auto relative mb-2 flex w-full overflow-hidden rounded-lg border p-4 pr-8 shadow-lg backdrop-blur-sm",
                   {
-                    "bg-background text-foreground border-border":
+                    "bg-background/90 text-foreground border-border":
                       variant === "default",
-                    "bg-destructive text-destructive-foreground border-destructive":
+                    "bg-destructive/90 text-destructive-foreground border-destructive":
                       variant === "destructive",
-                    "bg-green-600 text-white border-green-800":
+                    "bg-green-600/90 text-white border-green-800":
                       variant === "success",
-                    "bg-blue-600 text-white border-blue-800":
+                    "bg-blue-600/90 text-white border-blue-800":
                       variant === "info",
-                    "bg-yellow-600 text-white border-yellow-800":
+                    "bg-yellow-600/90 text-white border-yellow-800":
                       variant === "warning",
                   }
                 )}
