@@ -12,6 +12,7 @@ import {
   startOfMonth,
   endOfMonth,
   eachDayOfInterval,
+  parseISO,
 } from "date-fns";
 import { vi, enUS } from "date-fns/locale";
 import {
@@ -116,13 +117,9 @@ const DayCell = React.memo(
         {isIncomeDay && !isProfitDay && !isLossDay && (
           <span className="absolute bottom-0 left-0 h-2 w-2 bg-primary rounded-full" />
         )}
-        {isTransactionDay &&
-          !isHighSpending &&
-          !isIncomeDay &&
-          !isProfitDay &&
-          !isLossDay && (
-            <span className="absolute bottom-0 left-0 h-2 w-2 bg-accent-foreground rounded-full" />
-          )}
+        {isTransactionDay && (
+          <span className="absolute top-0 right-0 h-2 w-2 bg-accent-foreground rounded-full" />
+        )}
       </div>
     );
   }
@@ -134,6 +131,71 @@ interface EnhancedFinancialCalendarProps {
   selectedDate: Date | null;
   isLoading?: boolean;
 }
+
+// Hàm tạo Date từ chuỗi YYYY-MM-DD an toàn về múi giờ
+const createDateWithoutTimezone = (dateString: string): Date => {
+  try {
+    // Xử lý các định dạng ngày hợp lệ khác nhau
+    let year, month, day;
+
+    // Kiểm tra xem đầu vào có phải là ngày hợp lệ không
+    if (!dateString || typeof dateString !== "string") {
+      console.error("Ngày không hợp lệ:", dateString);
+      return new Date(0); // Trả về ngày mặc định nếu không hợp lệ
+    }
+
+    // Xử lý định dạng YYYY-MM-DD (tiêu chuẩn)
+    if (dateString.includes("-")) {
+      [year, month, day] = dateString.split("-").map(Number);
+    }
+    // Xử lý định dạng YYYY/MM/DD
+    else if (dateString.includes("/")) {
+      [year, month, day] = dateString.split("/").map(Number);
+    }
+    // Các định dạng khác có thể được hỗ trợ ở đây
+    else {
+      console.error("Định dạng ngày không được hỗ trợ:", dateString);
+      return new Date(0);
+    }
+
+    // Kiểm tra các giá trị sau khi phân tích
+    if (isNaN(year) || isNaN(month) || isNaN(day)) {
+      console.error("Không thể phân tích ngày:", dateString, [
+        year,
+        month,
+        day,
+      ]);
+      return new Date(0);
+    }
+
+    // Tạo ngày an toàn với múi giờ UTC
+    return new Date(Date.UTC(year, month - 1, day));
+  } catch (error) {
+    console.error("Lỗi khi xử lý ngày:", dateString, error);
+    return new Date(0);
+  }
+};
+
+// Hàm tạo dateKey từ Date
+const getDateKey = (date: Date): string => {
+  // Kiểm tra date hợp lệ
+  if (!date || isNaN(date.getTime())) {
+    console.error("Ngày không hợp lệ trong getDateKey:", date);
+    return "0000-00-00"; // Trả về giá trị mặc định cho lỗi
+  }
+
+  try {
+    // Đảm bảo định dạng YYYY-MM-DD sử dụng UTC để tránh vấn đề múi giờ
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(date.getUTCDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+  } catch (error) {
+    console.error("Lỗi khi tạo dateKey:", error, date);
+    return "0000-00-00";
+  }
+};
 
 export default function EnhancedFinancialCalendar({
   transactions,
@@ -151,6 +213,11 @@ export default function EnhancedFinancialCalendar({
 
   // Tất cả các tính toán dữ liệu hàng ngày được memoize
   const dailyData = useMemo(() => {
+    console.log(
+      "Đang tính toán lại dailyData, số giao dịch:",
+      transactions.length
+    );
+
     const data = new Map<
       string,
       {
@@ -161,32 +228,139 @@ export default function EnhancedFinancialCalendar({
       }
     >();
 
-    transactions.forEach((transaction) => {
-      const date = new Date(transaction.date);
-      const dateKey = date.toISOString().split("T")[0];
+    // Tạo danh sách các giao dịch có vấn đề để debug
+    const problematicTransactions: Array<{
+      id: string;
+      date: string;
+      reason: string;
+    }> = [];
 
-      if (!data.has(dateKey)) {
-        data.set(dateKey, {
-          date,
-          expenses: 0,
-          income: 0,
-          transactions: [],
+    transactions.forEach((transaction) => {
+      try {
+        // Kiểm tra transaction.date có hợp lệ không
+        if (!transaction.date) {
+          problematicTransactions.push({
+            id: transaction.id,
+            date: String(transaction.date),
+            reason: "Ngày trống",
+          });
+          return; // Bỏ qua giao dịch này
+        }
+
+        // Tạo date từ string an toàn về múi giờ
+        const date = createDateWithoutTimezone(transaction.date);
+
+        // Kiểm tra date đã tạo có hợp lệ không
+        if (isNaN(date.getTime())) {
+          problematicTransactions.push({
+            id: transaction.id,
+            date: transaction.date,
+            reason: "Không thể chuyển đổi thành ngày hợp lệ",
+          });
+          return; // Bỏ qua giao dịch này
+        }
+
+        // Tạo dateKey từ date
+        const dateKey = getDateKey(date);
+
+        // Kiểm tra dateKey đã tạo có hợp lệ không
+        if (dateKey === "0000-00-00") {
+          problematicTransactions.push({
+            id: transaction.id,
+            date: transaction.date,
+            reason: "DateKey không hợp lệ",
+          });
+          return; // Bỏ qua giao dịch này
+        }
+
+        // Debug ngày 20 và 21
+        if (date.getUTCDate() === 20 || date.getUTCDate() === 21) {
+          console.log(`Giao dịch ngày ${date.getUTCDate()}:`, {
+            id: transaction.id,
+            rawDate: transaction.date,
+            parsedDate: date.toISOString(),
+            dateKey,
+          });
+        }
+
+        if (!data.has(dateKey)) {
+          data.set(dateKey, {
+            date,
+            expenses: 0,
+            income: 0,
+            transactions: [],
+          });
+        }
+
+        const dayData = data.get(dateKey)!;
+
+        if (transaction.amount < 0) {
+          dayData.expenses += Math.abs(transaction.amount);
+        } else {
+          dayData.income += transaction.amount;
+        }
+
+        dayData.transactions.push(transaction);
+      } catch (error) {
+        console.error("Lỗi khi xử lý giao dịch:", transaction, error);
+        problematicTransactions.push({
+          id: transaction.id,
+          date: String(transaction.date),
+          reason: "Lỗi xử lý: " + String(error),
         });
       }
-
-      const dayData = data.get(dateKey)!;
-
-      if (transaction.amount < 0) {
-        dayData.expenses += Math.abs(transaction.amount);
-      } else {
-        dayData.income += transaction.amount;
-      }
-
-      dayData.transactions.push(transaction);
     });
+
+    // In log các giao dịch có vấn đề nếu có
+    if (problematicTransactions.length > 0) {
+      console.error(
+        `Có ${problematicTransactions.length} giao dịch có vấn đề:`,
+        problematicTransactions
+      );
+    }
+
+    // In ra tổng số ngày đã xử lý
+    console.log(`Tổng số ngày có giao dịch: ${data.size}`);
 
     return data;
   }, [transactions]);
+
+  // Tạo một hàm helper để so sánh ngày chính xác hơn
+  const isSameDayHelper = useCallback((date1: Date, date2: Date): boolean => {
+    // Bổ sung kiểm tra null/undefined
+    if (!date1 || !date2) {
+      return false;
+    }
+
+    // Kiểm tra nếu date là invalid
+    if (isNaN(date1.getTime()) || isNaN(date2.getTime())) {
+      return false;
+    }
+
+    // Bổ sung debug log để kiểm tra
+    const isDebugDay = date2.getUTCDate() === 20 || date2.getUTCDate() === 21;
+    if (isDebugDay) {
+      console.log(
+        `So sánh ngày ${date2.getUTCDate()}: `,
+        date1.toISOString(),
+        date2.toISOString(),
+        `[${date1.getUTCFullYear()}-${date1.getUTCMonth()}-${date1.getUTCDate()}]`,
+        `[${date2.getUTCFullYear()}-${date2.getUTCMonth()}-${date2.getUTCDate()}]`
+      );
+    }
+
+    // Chuyển đổi cả hai ngày sang cùng định dạng để so sánh
+    const day1 = new Date(
+      Date.UTC(date1.getUTCFullYear(), date1.getUTCMonth(), date1.getUTCDate())
+    );
+
+    const day2 = new Date(
+      Date.UTC(date2.getUTCFullYear(), date2.getUTCMonth(), date2.getUTCDate())
+    );
+
+    // So sánh timestamp thay vì từng phần riêng lẻ
+    return day1.getTime() === day2.getTime();
+  }, []);
 
   const highSpendingDays = useMemo(() => {
     const spendingDays = Array.from(dailyData.values())
@@ -201,9 +375,14 @@ export default function EnhancedFinancialCalendar({
       spendingDays[Math.floor(spendingDays.length * 0.25)]?.expenses || 0
     );
 
-    return spendingDays
+    const days = spendingDays
       .filter((day) => day.expenses >= threshold)
       .map((day) => day.date);
+
+    // Kiểm tra ngày 20 và 21
+    // console.log("High spending days:", days.map(d => d.getUTCDate()));
+
+    return days;
   }, [dailyData]);
 
   const incomeDays = useMemo(() => {
@@ -226,28 +405,37 @@ export default function EnhancedFinancialCalendar({
 
   const transactionDays = useMemo(() => {
     return Array.from(dailyData.values())
-      .filter((day) => {
-        const isHighSpending = highSpendingDays.some((d) =>
-          isSameDay(d, day.date)
-        );
-        const isIncomeDay = incomeDays.some((d) => isSameDay(d, day.date));
-        const isProfitDay = profitDays.some((d) => isSameDay(d, day.date));
-        const isLossDay = lossDays.some((d) => isSameDay(d, day.date));
-        return (
-          !isHighSpending &&
-          !isIncomeDay &&
-          !isProfitDay &&
-          !isLossDay &&
-          day.transactions.length > 0
-        );
-      })
+      .filter((day) => day.transactions.length > 0)
       .map((day) => day.date);
-  }, [dailyData, highSpendingDays, incomeDays, profitDays, lossDays]);
+  }, [dailyData]);
+
+  // Sử dụng lại sau khi đã tính toán tất cả các ngày có giao dịch
+  const regularTransactionDays = useMemo(() => {
+    return transactionDays.filter((day) => {
+      const isHighSpending = highSpendingDays.some((d) =>
+        isSameDayHelper(d, day)
+      );
+      const isIncomeDay = incomeDays.some((d) => isSameDayHelper(d, day));
+      const isProfitDay = profitDays.some((d) => isSameDayHelper(d, day));
+      const isLossDay = lossDays.some((d) => isSameDayHelper(d, day));
+
+      return !isHighSpending && !isIncomeDay && !isProfitDay && !isLossDay;
+    });
+  }, [
+    transactionDays,
+    highSpendingDays,
+    incomeDays,
+    profitDays,
+    lossDays,
+    isSameDayHelper,
+  ]);
 
   const selectedDateData = useMemo(() => {
     if (!selectedDate) return null;
 
-    const dateKey = selectedDate.toISOString().split("T")[0];
+    // Tạo dateKey từ selectedDate
+    const dateKey = getDateKey(selectedDate);
+
     return (
       dailyData.get(dateKey) || {
         date: selectedDate,
@@ -256,7 +444,7 @@ export default function EnhancedFinancialCalendar({
         transactions: [],
       }
     );
-  }, [selectedDate, dailyData]);
+  }, [selectedDate, dailyData, getDateKey]);
 
   const daysInMonth = useMemo(() => {
     const start = startOfMonth(currentMonth);
@@ -267,10 +455,54 @@ export default function EnhancedFinancialCalendar({
   // Convert handlers to useCallback
   const handleDateClick = useCallback(
     (date: Date) => {
-      onSelectDate(date);
+      // Tạo date chuẩn từ date được click sử dụng UTC
+      const normalizedDate = new Date(
+        Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())
+      );
+
+      onSelectDate(normalizedDate);
       setIsDialogOpen(true);
+
+      // Thêm log chi tiết để debug
+      // console.log("===== DEBUG TRANSACTIONS =====");
+      // console.log("1. Clicked date object:", date);
+      // console.log("2. Normalized date:", normalizedDate);
+      // console.log("3. Date ISO string:", normalizedDate.toISOString());
+      // console.log("4. Date yyyy-MM-dd:", getDateKey(normalizedDate));
+
+      const dateKey = getDateKey(normalizedDate);
+      // console.log("5. Date key:", dateKey);
+
+      // Log tất cả transactions
+      // console.log(
+      //   "6. All transactions:",
+      //   transactions.map((t) => ({
+      //     id: t.id,
+      //     date: t.date,
+      //     desc: t.description,
+      //   }))
+      // );
+
+      // Log transactions tìm thấy theo dateKey
+      const foundTransactions = dailyData.get(dateKey)?.transactions || [];
+      // console.log(
+      //   "7. Found transactions by dateKey:",
+      //   foundTransactions.length
+      // );
+      // console.log(
+      //   "8. Found transactions details:",
+      //   foundTransactions.map((t) => ({
+      //     id: t.id,
+      //     date: t.date,
+      //     desc: t.description,
+      //     originalDateStr: t.date,
+      //   }))
+      // );
+
+      // Log tất cả các khóa trong dailyData
+      // console.log("9. All dailyData keys:", Array.from(dailyData.keys()));
     },
-    [onSelectDate, setIsDialogOpen]
+    [onSelectDate, setIsDialogOpen, dailyData, getDateKey, transactions]
   );
 
   const navigateMonth = useCallback((direction: "prev" | "next") => {
@@ -375,16 +607,21 @@ export default function EnhancedFinancialCalendar({
                     day={day}
                     isCurrentMonth={isSameMonth(day, currentMonth)}
                     isHighSpending={highSpendingDays.some((d) =>
-                      isSameDay(d, day)
+                      isSameDayHelper(d, day)
                     )}
-                    isIncomeDay={incomeDays.some((d) => isSameDay(d, day))}
-                    isProfitDay={profitDays.some((d) => isSameDay(d, day))}
-                    isLossDay={lossDays.some((d) => isSameDay(d, day))}
-                    isTransactionDay={transactionDays.some((d) =>
-                      isSameDay(d, day)
+                    isIncomeDay={incomeDays.some((d) =>
+                      isSameDayHelper(d, day)
+                    )}
+                    isProfitDay={profitDays.some((d) =>
+                      isSameDayHelper(d, day)
+                    )}
+                    isLossDay={lossDays.some((d) => isSameDayHelper(d, day))}
+                    isTransactionDay={regularTransactionDays.some((d) =>
+                      isSameDayHelper(d, day)
                     )}
                     isSelected={
-                      selectedDate !== null && isSameDay(selectedDate, day)
+                      selectedDate !== null &&
+                      isSameDayHelper(selectedDate, day)
                     }
                     onClick={handleDateClick}
                   />
@@ -392,26 +629,38 @@ export default function EnhancedFinancialCalendar({
               })}
 
               {/* Current month days */}
-              {daysInMonth.map((day) => (
-                <DayCell
-                  key={day.toISOString()}
-                  day={day}
-                  isCurrentMonth={isSameMonth(day, currentMonth)}
-                  isHighSpending={highSpendingDays.some((d) =>
-                    isSameDay(d, day)
-                  )}
-                  isIncomeDay={incomeDays.some((d) => isSameDay(d, day))}
-                  isProfitDay={profitDays.some((d) => isSameDay(d, day))}
-                  isLossDay={lossDays.some((d) => isSameDay(d, day))}
-                  isTransactionDay={transactionDays.some((d) =>
-                    isSameDay(d, day)
-                  )}
-                  isSelected={
-                    selectedDate !== null && isSameDay(selectedDate, day)
-                  }
-                  onClick={handleDateClick}
-                />
-              ))}
+              {daysInMonth.map((day) => {
+                // Đảm bảo rằng day ở định dạng UTC
+                const utcDay = new Date(
+                  Date.UTC(day.getFullYear(), day.getMonth(), day.getDate())
+                );
+
+                return (
+                  <DayCell
+                    key={utcDay.toISOString()}
+                    day={utcDay}
+                    isCurrentMonth={isSameMonth(utcDay, currentMonth)}
+                    isHighSpending={highSpendingDays.some((d) =>
+                      isSameDayHelper(d, utcDay)
+                    )}
+                    isIncomeDay={incomeDays.some((d) =>
+                      isSameDayHelper(d, utcDay)
+                    )}
+                    isProfitDay={profitDays.some((d) =>
+                      isSameDayHelper(d, utcDay)
+                    )}
+                    isLossDay={lossDays.some((d) => isSameDayHelper(d, utcDay))}
+                    isTransactionDay={regularTransactionDays.some((d) =>
+                      isSameDayHelper(d, utcDay)
+                    )}
+                    isSelected={
+                      selectedDate !== null &&
+                      isSameDayHelper(selectedDate, utcDay)
+                    }
+                    onClick={handleDateClick}
+                  />
+                );
+              })}
 
               {/* Next month days to fill grid */}
               {Array.from({
@@ -435,16 +684,21 @@ export default function EnhancedFinancialCalendar({
                     day={day}
                     isCurrentMonth={isSameMonth(day, currentMonth)}
                     isHighSpending={highSpendingDays.some((d) =>
-                      isSameDay(d, day)
+                      isSameDayHelper(d, day)
                     )}
-                    isIncomeDay={incomeDays.some((d) => isSameDay(d, day))}
-                    isProfitDay={profitDays.some((d) => isSameDay(d, day))}
-                    isLossDay={lossDays.some((d) => isSameDay(d, day))}
-                    isTransactionDay={transactionDays.some((d) =>
-                      isSameDay(d, day)
+                    isIncomeDay={incomeDays.some((d) =>
+                      isSameDayHelper(d, day)
+                    )}
+                    isProfitDay={profitDays.some((d) =>
+                      isSameDayHelper(d, day)
+                    )}
+                    isLossDay={lossDays.some((d) => isSameDayHelper(d, day))}
+                    isTransactionDay={regularTransactionDays.some((d) =>
+                      isSameDayHelper(d, day)
                     )}
                     isSelected={
-                      selectedDate !== null && isSameDay(selectedDate, day)
+                      selectedDate !== null &&
+                      isSameDayHelper(selectedDate, day)
                     }
                     onClick={handleDateClick}
                   />
@@ -480,6 +734,12 @@ export default function EnhancedFinancialCalendar({
               <div className="h-2 w-2 rounded-full bg-primary" />
               <span>
                 {language === "vi" ? "Ngày có thu nhập" : "Income day"}
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="h-2 w-2 rounded-full bg-accent-foreground" />
+              <span>
+                {language === "vi" ? "Giao dịch khác" : "Other transactions"}
               </span>
             </div>
           </div>
@@ -582,9 +842,19 @@ export default function EnhancedFinancialCalendar({
                 : t.transactionsTitle}
             </DialogTitle>
             <DialogDescription id="transaction-details-description">
-              {language === "vi"
-                ? "Chi tiết giao dịch cho ngày đã chọn"
-                : "Transaction details for selected date"}
+              {selectedDate
+                ? language === "vi"
+                  ? `Chi tiết giao dịch cho ngày ${format(
+                      selectedDate,
+                      "dd/MM/yyyy"
+                    )}`
+                  : `Transaction details for ${format(
+                      selectedDate,
+                      "MMMM d, yyyy"
+                    )}`
+                : language === "vi"
+                ? "Chi tiết giao dịch"
+                : "Transaction details"}
             </DialogDescription>
           </DialogHeader>
 

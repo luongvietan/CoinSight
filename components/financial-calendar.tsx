@@ -1,7 +1,7 @@
 //financial-calendar.tsx :
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import {
   format,
   getDaysInMonth,
@@ -33,6 +33,100 @@ interface FinancialCalendarProps {
   selectedDateTransactions: Transaction[];
 }
 
+// Hàm tạo Date từ chuỗi YYYY-MM-DD an toàn về múi giờ
+const createDateWithoutTimezone = (dateString: string): Date => {
+  try {
+    // Xử lý các định dạng ngày hợp lệ khác nhau
+    let year, month, day;
+
+    // Kiểm tra xem đầu vào có phải là ngày hợp lệ không
+    if (!dateString || typeof dateString !== "string") {
+      console.error("Ngày không hợp lệ:", dateString);
+      return new Date(0); // Trả về ngày mặc định nếu không hợp lệ
+    }
+
+    // Xử lý định dạng YYYY-MM-DD (tiêu chuẩn)
+    if (dateString.includes("-")) {
+      [year, month, day] = dateString.split("-").map(Number);
+    }
+    // Xử lý định dạng YYYY/MM/DD
+    else if (dateString.includes("/")) {
+      [year, month, day] = dateString.split("/").map(Number);
+    }
+    // Các định dạng khác có thể được hỗ trợ ở đây
+    else {
+      console.error("Định dạng ngày không được hỗ trợ:", dateString);
+      return new Date(0);
+    }
+
+    // Kiểm tra các giá trị sau khi phân tích
+    if (isNaN(year) || isNaN(month) || isNaN(day)) {
+      console.error("Không thể phân tích ngày:", dateString, [
+        year,
+        month,
+        day,
+      ]);
+      return new Date(0);
+    }
+
+    // Tạo ngày an toàn với múi giờ UTC
+    return new Date(Date.UTC(year, month - 1, day));
+  } catch (error) {
+    console.error("Lỗi khi xử lý ngày:", dateString, error);
+    return new Date(0);
+  }
+};
+
+// Hàm tạo dateKey từ Date
+const getDateKey = (date: Date): string => {
+  // Kiểm tra date hợp lệ
+  if (!date || isNaN(date.getTime())) {
+    console.error("Ngày không hợp lệ trong getDateKey:", date);
+    return "0000-00-00"; // Trả về giá trị mặc định cho lỗi
+  }
+
+  try {
+    // Đảm bảo định dạng YYYY-MM-DD sử dụng UTC để tránh vấn đề múi giờ
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(date.getUTCDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+  } catch (error) {
+    console.error("Lỗi khi tạo dateKey:", error, date);
+    return "0000-00-00";
+  }
+};
+
+// Cập nhật financial-calendar.tsx với một hàm chuyển đổi ngày từ Date sang yyyy-MM-dd string
+const getFormattedDateString = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+// Cập nhật hàm transactionsForDate để sử dụng phương thức mới này
+const transactionsForDate = (date: Date) => {
+  try {
+    // Tạo dateKey theo đúng định dạng YYYY-MM-DD
+    const dateKey = getDateKey(date);
+
+    // Kiểm tra chi tiết quá trình so khớp
+    // console.log("Đang tìm giao dịch cho ngày:", dateKey);
+    // console.log(
+    //   "So sánh với high spending days:",
+    //   highSpendingDays.map((t) => ({ id: t.id, date: t.date }))
+    // );
+
+    // So khớp chính xác với rawDate của các giao dịch
+    return highSpendingDays.filter((t) => t.date === dateKey);
+  } catch (error) {
+    console.error("Lỗi khi tìm giao dịch theo ngày:", error);
+    return [];
+  }
+};
+
 export default function FinancialCalendar({
   highSpendingDays,
   onSelectDate,
@@ -45,8 +139,52 @@ export default function FinancialCalendar({
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const handleSelect = (date: Date) => {
-    onSelectDate(date);
+    // Tạo date chuẩn từ date được click sử dụng UTC
+    const normalizedDate = new Date(
+      Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())
+    );
+
+    onSelectDate(normalizedDate);
     setIsDialogOpen(true);
+
+    // Thêm log chi tiết để debug
+    // console.log("===== DEBUG FINANCIAL CALENDAR =====");
+    // console.log("1. Selected date object:", date);
+    // console.log("2. Normalized date:", normalizedDate);
+    // console.log("3. Date ISO string:", normalizedDate.toISOString());
+
+    // Sử dụng getDateKey nếu đã thêm hàm này
+    const dateKey = getDateKey(normalizedDate);
+    // console.log("4. Date key:", dateKey);
+
+    // Log các giao dịch tìm được
+    // console.log("5. Found transactions for date:", selectedDateTransactions);
+
+    // Log all transactions
+    // console.log(
+    //   "6. All high spending transactions:",
+    //   highSpendingDays.map((t) => ({
+    //     id: t.id,
+    //     date: t.date,
+    //     desc: t.description,
+    //   }))
+    // );
+
+    // console.log("7. Selected date transactions:", selectedDateTransactions);
+
+    // Thêm vào hàm handleSelect
+    // console.log(
+    //   "Transaction dates in raw format:",
+    //   highSpendingDays.map((t) => ({
+    //     id: t.id,
+    //     rawDate: t.date,
+    //     parsedDateKey: getDateKey(createDateWithoutTimezone(t.date)),
+    //     description: t.description,
+    //   }))
+    // );
+
+    // console.log("Selected date key:", dateKey);
+    // console.log("Matching transactions:", selectedDateTransactions);
   };
 
   const goToPreviousMonth = () => {
@@ -56,21 +194,6 @@ export default function FinancialCalendar({
   const goToNextMonth = () => {
     setCurrentMonth(addMonths(currentMonth, 1));
   };
-
-  const transactionsForDate = (date: Date) =>
-    highSpendingDays.filter((t) => {
-      try {
-        const transactionDate = new Date(t.date);
-        if (isNaN(transactionDate.getTime())) return false;
-        return (
-          transactionDate.getFullYear() === date.getFullYear() &&
-          transactionDate.getMonth() === date.getMonth() &&
-          transactionDate.getDate() === date.getDate()
-        );
-      } catch {
-        return false;
-      }
-    });
 
   const getTotalSpending = () => {
     return selectedDateTransactions
@@ -95,17 +218,61 @@ export default function FinancialCalendar({
 
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(
-        currentMonth.getFullYear(),
-        currentMonth.getMonth(),
-        day
+        Date.UTC(currentMonth.getFullYear(), currentMonth.getMonth(), day)
       );
       const isSelected =
         selectedDate &&
-        selectedDate.getDate() === day &&
-        selectedDate.getMonth() === currentMonth.getMonth() &&
-        selectedDate.getFullYear() === currentMonth.getFullYear();
+        selectedDate.getUTCDate() === date.getUTCDate() &&
+        selectedDate.getUTCMonth() === date.getUTCMonth() &&
+        selectedDate.getUTCFullYear() === date.getUTCFullYear();
 
-      const transactions = transactionsForDate(date);
+      // Tạo dateKey theo đúng định dạng:
+      const dateKey = getDateKey(date);
+
+      // Cải thiện cách tìm giao dịch cho ngày
+      let transactions = [];
+
+      // Thử các định dạng khác nhau để tìm giao dịch
+      const paddedDay = String(day).padStart(2, "0");
+      const yearMonthStr = `${currentMonth.getFullYear()}-${String(
+        currentMonth.getMonth() + 1
+      ).padStart(2, "0")}`;
+      const fullDateStr = `${yearMonthStr}-${paddedDay}`;
+
+      // Cải thiện tìm kiếm giao dịch - kiểm tra nhiều định dạng
+      transactions = highSpendingDays.filter((t) => {
+        // Kiểm tra nếu là chính xác ngày này
+        if (t.date === fullDateStr) {
+          return true;
+        }
+
+        // Kiểm tra startsWith cho các trường hợp có thêm thời gian
+        if (t.date.startsWith(fullDateStr)) {
+          return true;
+        }
+
+        // Xử lý trường hợp định dạng khác như yyyy/mm/dd
+        const altFormat = fullDateStr.replace(/-/g, "/");
+        if (t.date === altFormat || t.date.startsWith(altFormat)) {
+          return true;
+        }
+
+        return false;
+      });
+
+      // Nếu là ngày 20 hoặc 21 tháng 4, 2025, bật debug
+      if (
+        (day === 20 || day === 21) &&
+        currentMonth.getMonth() === 3 &&
+        currentMonth.getFullYear() === 2025
+      ) {
+        console.log(`Debug ngày ${day}/04/2025:`, {
+          fullDateStr,
+          foundTransactions: transactions.length,
+          firstTransaction: transactions[0],
+        });
+      }
+
       const totalSpending = transactions
         .filter((t) => t.amount < 0)
         .reduce((sum, t) => sum + Math.abs(t.amount), 0);
@@ -201,15 +368,48 @@ export default function FinancialCalendar({
               {t.transactionDetails || "Transaction Details"}
             </DialogTitle>
             <DialogDescription>
-              {t.viewTransactions ||
-                "View transaction details for the selected date."}
+              {selectedDate
+                ? language === "vi"
+                  ? `Chi tiết giao dịch cho ngày ${format(
+                      selectedDate,
+                      "dd/MM/yyyy"
+                    )}`
+                  : `Transaction details for ${format(
+                      selectedDate,
+                      "MMMM d, yyyy"
+                    )}`
+                : t.viewTransactions ||
+                  "View transaction details for the selected date."}
             </DialogDescription>
           </DialogHeader>
 
           <div className="mt-4">
+            {/* {console.log(
+              "Dữ liệu selectedDateTransactions trong Dialog:",
+              selectedDateTransactions
+            )} */}
+
             {selectedDateTransactions.length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-muted-foreground">{t.noTransactions}</p>
+                {/* <div className="mt-2 text-xs text-muted-foreground">
+                  <p>
+                    Debug info:{" "}
+                    {selectedDate
+                      ? format(selectedDate, "yyyy-MM-dd")
+                      : "No date"}
+                  </p>
+                  <p>
+                    Raw date transactions:{" "}
+                    {JSON.stringify(
+                      highSpendingDays.filter(
+                        (t) =>
+                          t.date ===
+                          (selectedDate ? getDateKey(selectedDate) : "")
+                      )
+                    )}
+                  </p>
+                </div> */}
               </div>
             ) : (
               <div className="space-y-4">

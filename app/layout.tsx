@@ -11,7 +11,7 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "CoinSight - AI-Powered Finance Management",
   description: "Manage your personal finances with AI insights",
-  generator: "v0.dev",
+  generator: "duelurkers",
 };
 
 // Server Component
@@ -28,6 +28,9 @@ export default function RootLayout({
           name="description"
           content="Manage your personal finances with AI insights"
         />
+        <link rel="icon" href="/favicon.ico" />
+        <link rel="apple-touch-icon" href="/logo.svg" />
+        <link rel="icon" type="image/svg+xml" href="/logo.svg" />
       </head>
       <body
         className={cn(
